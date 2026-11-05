@@ -1,0 +1,476 @@
+/* Public CSS: components & utilities only (preflight omitted to prevent interference with Bootstrap 3) */
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Base Body & Container match Bootstrap 3 eirokrediti.lv exactly */
+body {
+    padding-top: 50px !important;
+    background: #E9EAED !important;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    color: #333333 !important;
+    font-size: 14px;
+    line-height: 1.42857143;
+}
+
+.container-eirokrediti {
+    width: 100%;
+    padding-left: 15px;
+    padding-right: 15px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (min-width: 768px) {
+    .container-eirokrediti {
+        width: 750px;
+    }
+}
+@media (min-width: 992px) {
+    .container-eirokrediti {
+        width: 970px;
+    }
+}
+@media (min-width: 1200px) {
+    .container-eirokrediti {
+        width: 1170px;
+    }
+    .col-large {
+        width: 840px !important;
+    }
+    .col-small {
+        width: 330px !important;
+    }
+}
+
+/* Navbar Bootstrap 3 styling & hover/active states */
+.navbar-inverse .navbar-nav > li > a:hover,
+.navbar-inverse .navbar-nav > li > a:focus,
+.navbar-inverse .navbar-nav > .active > a,
+.navbar-inverse .navbar-nav > .active > a:hover,
+.navbar-inverse .navbar-nav > .active > a:focus,
+.navbar-inverse .navbar-nav > .open > a,
+.navbar-inverse .navbar-nav > .open > a:hover,
+.navbar-inverse .navbar-nav > .open > a:focus,
+.navbar-inverse .navbar-nav > li.dropdown:hover > a {
+    color: #ffffff !important;
+    background-color: #3E5582 !important;
+    background-image: linear-gradient(to bottom, #3E5582 0, #3E5582 100%) !important;
+    box-shadow: inset 0 3px 9px rgba(0, 0, 0, 0.25) !important;
+    text-decoration: none;
+}
+
+/* Desktop Dropdown Menu (>= 768px) */
+@media (min-width: 768px) {
+    .dropdown {
+        position: relative;
+    }
+    .dropdown:hover > .dropdown-menu {
+        display: block !important;
+    }
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        display: none;
+        min-width: 200px;
+        padding: 5px 0;
+        margin: 0;
+        font-size: 14px;
+        text-align: left;
+        list-style: none;
+        background-color: #ffffff;
+        border: 1px solid #ccc;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 0 0 4px 4px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+    }
+    .dropdown-menu > li > a {
+        display: block;
+        padding: 6px 20px;
+        clear: both;
+        font-weight: 400;
+        line-height: 1.42857143;
+        color: #333333;
+        white-space: nowrap;
+        text-shadow: none;
+        text-decoration: none;
+    }
+    .dropdown-menu > li > a:hover,
+    .dropdown-menu > li > a:focus {
+        color: #262626 !important;
+        text-decoration: none;
+        background-color: #e8e8e8;
+        background-image: linear-gradient(to bottom, #f5f5f5 0, #e8e8e8 100%);
+        background-repeat: repeat-x;
+    }
+    .dropdown-menu > li.active > a,
+    .dropdown-menu > li.active > a:hover {
+        color: #ffffff !important;
+        text-decoration: none;
+        background-color: #2e6da4;
+        background-image: linear-gradient(to bottom, #337ab7 0, #2e6da4 100%);
+        background-repeat: repeat-x;
+    }
+}
+
+/* Mobile Navbar & Dropdown Menu (< 768px) */
+@media (max-width: 767px) {
+    .navbar-inverse .navbar-nav > li > a {
+        display: block;
+        padding: 10px 15px;
+        color: #ffffff !important;
+    }
+    .navbar-inverse .navbar-nav > li > a:hover,
+    .navbar-inverse .navbar-nav > li > a:focus,
+    .navbar-inverse .navbar-nav > .active > a,
+    .navbar-inverse .navbar-nav > .active > a:hover,
+    .navbar-inverse .navbar-nav > .active > a:focus,
+    .navbar-inverse .navbar-nav > .open > a,
+    .navbar-inverse .navbar-nav > .open > a:hover,
+    .navbar-inverse .navbar-nav > .open > a:focus,
+    .navbar-inverse .navbar-nav > li.dropdown:hover > a {
+        color: #ffffff !important;
+        background-color: #3E5582 !important;
+        background-image: linear-gradient(to bottom, #3E5582 0, #3E5582 100%) !important;
+        box-shadow: inset 0 3px 9px rgba(0, 0, 0, 0.25) !important;
+    }
+
+    /* Submenu reset for mobile: always static in-flow so it pushes down content */
+    .dropdown-menu,
+    .navbar-nav .dropdown-menu,
+    .navbar-inverse .navbar-nav .dropdown-menu,
+    .navbar-inverse .navbar-nav .open .dropdown-menu {
+        position: static !important;
+        float: none !important;
+        width: 100% !important;
+        margin-top: 0 !important;
+        background-color: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 5px 0 !important;
+    }
+
+    /* When hovered or open on mobile, display in normal flow and push down the items below */
+    .dropdown:hover > .dropdown-menu,
+    .dropdown.open > .dropdown-menu,
+    .navbar-nav .dropdown:hover > .dropdown-menu,
+    .navbar-nav .open .dropdown-menu,
+    .navbar-inverse .navbar-nav .dropdown:hover > .dropdown-menu,
+    .navbar-inverse .navbar-nav .open .dropdown-menu,
+    .navbar-inverse .navbar-nav .dropdown.open .dropdown-menu {
+        display: block !important;
+        position: static !important;
+        float: none !important;
+        width: 100% !important;
+    }
+
+    /* Submenu links: light grey text, indented */
+    .navbar-inverse .navbar-nav .dropdown-menu > li > a,
+    .navbar-inverse .navbar-nav .open .dropdown-menu > li > a {
+        color: #9d9d9d !important;
+        padding: 5px 15px 5px 25px !important;
+        line-height: 20px !important;
+        background: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        display: block !important;
+    }
+    .navbar-inverse .navbar-nav .dropdown-menu > li > a:hover,
+    .navbar-inverse .navbar-nav .dropdown-menu > li > a:focus,
+    .navbar-inverse .navbar-nav .open .dropdown-menu > li > a:hover,
+    .navbar-inverse .navbar-nav .open .dropdown-menu > li > a:focus {
+        color: #ffffff !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+    }
+
+    /* Active submenu link: bright blue gradient */
+    .navbar-inverse .navbar-nav .dropdown-menu > li.active > a,
+    .navbar-inverse .navbar-nav .dropdown-menu > li.active > a:hover,
+    .navbar-inverse .navbar-nav .dropdown-menu > li.active > a:focus,
+    .navbar-inverse .navbar-nav .open .dropdown-menu > .active > a,
+    .navbar-inverse .navbar-nav .open .dropdown-menu > .active > a:hover,
+    .navbar-inverse .navbar-nav .open .dropdown-menu > .active > a:focus {
+        color: #ffffff !important;
+        background-color: #3E5582 !important;
+        background-image: -webkit-linear-gradient(top, #337ab7 0, #2e6da4 100%) !important;
+        background-image: linear-gradient(to bottom, #337ab7 0, #2e6da4 100%) !important;
+        background-repeat: repeat-x !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Panel Bootstrap 3 match */
+.panel-custom {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.panel-heading-custom {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+    color: #333;
+    background-image: -webkit-linear-gradient(top, #f5f5f5 0, #e8e8e8 100%);
+    background-image: linear-gradient(to bottom, #f5f5f5 0, #e8e8e8 100%);
+    background-repeat: repeat-x;
+}
+.panel-heading-custom h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+.panel-heading-custom a {
+    color: #333;
+    text-decoration: none;
+}
+.panel-heading-custom a:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
+.panel-body-custom {
+    padding: 15px;
+}
+
+/* Loans row match */
+.loans2-custom {
+    line-height: 25px;
+    border-top: 1px solid #EEEEEE;
+    padding-bottom: 7px;
+    padding-top: 10px;
+}
+.loans2-custom.recommend {
+    background: transparent;
+}
+.loans2-custom .amount {
+    font-size: 20px;
+    font-weight: bold;
+}
+.loans2-custom .years, .loans2-custom .time {
+    font-size: 12px;
+}
+.loans2-custom .description {
+    font-size: 12px;
+    margin-bottom: -10px;
+    margin-top: 5px;
+    color: #a9a9a9;
+}
+
+/* Small loans in sidebar */
+.small-loans-custom {
+    border-bottom: 1px solid #EEEEEE;
+    padding-bottom: 10px;
+    padding-top: 10px;
+}
+.small-loans-custom:last-child {
+    border-bottom: 0;
+}
+.small-loans-custom .amount {
+    font-size: 12px;
+}
+.small-loans-custom .amount span {
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.small-links {
+    border-bottom: 1px solid #EEEEEE;
+    padding-bottom: 5px;
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+}
+.small-links a {
+    color: #337ab7;
+    text-decoration: none;
+}
+.small-links a:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
+.small-links .count {
+    color: #9F9F9F;
+    font-size: 12px;
+}
+
+/* Green action buttons */
+.btn-success-custom {
+    color: #fff !important;
+    background-color: #5cb85c;
+    border: 1px solid #4cae4c;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.15),0 1px 1px rgba(0,0,0,.075);
+    background-image: -webkit-linear-gradient(top,#5cb85c 0,#449d44 100%);
+    background-image: linear-gradient(to bottom,#5cb85c 0,#449d44 100%);
+    background-repeat: repeat-x;
+    display: inline-block;
+    text-decoration: none !important;
+}
+.btn-success-custom:hover {
+    background-color: #449d44;
+    background-position: 0 -15px;
+    border-color: #398439;
+    color: #fff;
+}
+.btn-sm-custom {
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
+
+/* Stars */
+.star-filled {
+    color: #E7711B;
+    font-size: 15px;
+}
+.star-empty {
+    color: #E7711B;
+    font-size: 15px;
+    opacity: 0.35;
+}
+
+/* Breadcrumb */
+.breadcrumb-custom {
+    background: none;
+    padding: 0 5px 5px 5px;
+    margin: 0;
+    list-style: none;
+    font-size: 12px;
+    color: #777;
+}
+.breadcrumb-custom a {
+    color: #337ab7;
+    text-decoration: none;
+}
+.breadcrumb-custom a:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
+
+/* Footer match */
+footer.footer-eirokrediti {
+    margin-top: 15px;
+    padding: 20px 0 10px 0;
+    background: #DDDFE3;
+    color: #475569;
+    font-size: 12px;
+    border-top: 1px solid #d0d2d6;
+}
+footer.footer-eirokrediti a {
+    color: #337ab7;
+    text-decoration: none;
+}
+footer.footer-eirokrediti a:hover,
+footer.footer-eirokrediti a:focus {
+    color: #23527c;
+    text-decoration: underline;
+}
+
+/* Breadcrumb styling */
+.breadcrumb {
+    color: #374151;
+}
+.breadcrumb > li {
+    color: #374151;
+}
+.breadcrumb > li + li:before {
+    color: #6b7280;
+}
+.breadcrumb a {
+    color: #337ab7;
+    text-decoration: none;
+}
+.breadcrumb a:hover,
+.breadcrumb a:focus {
+    color: #23527c;
+    text-decoration: underline;
+}
+
+/* Accessibility: Button contrast improvements (AA/AAA compliant) */
+.btn-success {
+    background-color: #16803c !important;
+    border-color: #157336 !important;
+    color: #ffffff !important;
+    text-shadow: none !important;
+}
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active {
+    background-color: #12632e !important;
+    background-image: none !important;
+    background-position: 0 0 !important;
+    border-color: #0f5226 !important;
+    color: #ffffff !important;
+}
+.btn-primary {
+    background-color: #1d4ed8 !important;
+    border-color: #1e40af !important;
+    color: #ffffff !important;
+    text-shadow: none !important;
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: #1e40af !important;
+    background-image: none !important;
+    background-position: 0 0 !important;
+    border-color: #172554 !important;
+    color: #ffffff !important;
+}
+
+/* Scroll to top button */
+#scroll-to-top {
+    z-index: 100;
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    display: none;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
+
+/* Big reviews styling (lender reviews) */
+.big-reviews {
+    border-bottom: 1px solid #EEEEEE;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.big-reviews .name strong {
+    padding-right: 10px;
+}
+.big-reviews span.lender {
+    color: #475569;
+    padding-right: 10px;
+}
+.big-reviews span.date {
+    color: #475569;
+    font-size: 12px;
+}
+.big-reviews blockquote {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    padding: 10px 20px;
+    font-size: 14px;
+    border-left: 5px solid #eee;
+    color: #333;
+}
+

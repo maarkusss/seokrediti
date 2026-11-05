@@ -1,0 +1,1 @@
+(()=>{var e=document.querySelector("#scroll_to_top_button");window.addEventListener("scroll",(function(n){window.pageYOffset>=1e3&&e.classList.contains("hidden")?e.classList.remove("hidden"):window.pageYOffset<1e3&&!e.classList.contains("hidden")&&e.classList.add("hidden")})),e.addEventListener("click",(function(){window.scrollTo({top:0,behavior:"smooth"})}))})();

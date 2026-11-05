@@ -135,13 +135,11 @@ class SectionController extends Controller
             ]);
         } elseif ($section->type == 'reviews') {
             $lendersList = Lenders::with(['data', 'reviews'])
-                ->where('active', true)
+                ->orderByRaw('CASE WHEN active = 1 THEN 0 ELSE 1 END ASC')
+                ->orderByRaw('CASE WHEN position IS NULL THEN 1 ELSE 0 END ASC')
                 ->orderBy('position', 'asc')
+                ->orderBy('name', 'asc')
                 ->get();
-
-            if ($lendersList->isEmpty()) {
-                $lendersList = Lenders::with(['data', 'reviews'])->orderBy('name', 'asc')->get();
-            }
 
             $recentReviews = Reviews::with('lender')->latest()->take(12)->get();
 

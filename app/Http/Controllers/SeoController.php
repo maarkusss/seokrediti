@@ -169,7 +169,7 @@ class SeoController extends Controller
                 $addEntry('/' . $sec->route_name, $priority, $freq, $sec->updated_at);
 
                 if ($sec->type === 'reviews') {
-                    $lenders = Lenders::where('active', true)->orderBy('position')->get();
+                    $lenders = Lenders::orderBy('position')->get();
                     foreach ($lenders as $lender) {
                         if (!empty($lender->route_name)) {
                             $addEntry('/' . $sec->route_name . '/' . $lender->route_name, '0.7', 'weekly', $lender->updated_at);

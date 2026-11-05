@@ -86,12 +86,14 @@
                                 <a href="{{ $lProfileUrl }}" class="btn-line btn-sm">
                                     Atsauksmes ({{ $lRevCount }})
                                 </a>
-                                <a href="{{ route('go', ['lender_id' => $lenderItem->id, 'lender_position' => $idx + 1]) }}"
-                                   rel="nofollow sponsored noopener"
-                                   target="_blank"
-                                   class="btn-ink btn-sm">
-                                    Piedāvājums
-                                </a>
+                                @if ($lenderItem->active && !empty($lenderItem->affiliate_link))
+                                    <a href="{{ route('go', ['lender_id' => $lenderItem->id, 'lender_position' => $idx + 1]) }}"
+                                       rel="nofollow sponsored noopener"
+                                       target="_blank"
+                                       class="btn-ink btn-sm">
+                                        Piedāvājums
+                                    </a>
+                                @endif
                             </div>
                         </article>
                     @endforeach

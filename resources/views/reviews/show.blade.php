@@ -108,12 +108,14 @@
                     <a href="#pievienot-atsauksmi" class="btn-line">
                         Rakstīt atsauksmi
                     </a>
-                    <a href="{{ $goUrl }}"
-                       rel="nofollow sponsored noopener"
-                       target="_blank"
-                       class="btn-ink">
-                        Apskatīt {{ $lender->name }} piedāvājumu →
-                    </a>
+                    @if ($lender->active && !empty($lender->affiliate_link))
+                        <a href="{{ $goUrl }}"
+                           rel="nofollow sponsored noopener"
+                           target="_blank"
+                           class="btn-ink">
+                            Apskatīt {{ $lender->name }} piedāvājumu →
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>

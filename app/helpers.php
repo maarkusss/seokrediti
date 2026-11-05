@@ -516,14 +516,18 @@ if (!function_exists('generate_breadcrumbs')) {
             }
 
             $title = null;
-            try {
-                $title = Sections::where('route_name', $segment)->where('lang', $locale)->value('name')
-                    ?? LoanTypes::where('route_name', $segment)->where('lang', $locale)->value('name')
-                    ?? Lenders::where('route_name', $segment)->value('name')
-                    ?? Sections::where('route_name', $segment)->value('name')
-                    ?? LoanTypes::where('route_name', $segment)->value('name');
-            } catch (\Throwable $e) {
-                $title = null;
+            if ($segment === 'unsubscribe') {
+                $title = $locale === 'ru' ? 'Отписаться от новостей' : 'Atrakstīties no jaunumiem';
+            } else {
+                try {
+                    $title = Sections::where('route_name', $segment)->where('lang', $locale)->value('name')
+                        ?? LoanTypes::where('route_name', $segment)->where('lang', $locale)->value('name')
+                        ?? Lenders::where('route_name', $segment)->value('name')
+                        ?? Sections::where('route_name', $segment)->value('name')
+                        ?? LoanTypes::where('route_name', $segment)->value('name');
+                } catch (\Throwable $e) {
+                    $title = null;
+                }
             }
 
             $title = $title ? clean_legacy_brand($title) : ucfirst(str_replace('-', ' ', $segment));

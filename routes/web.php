@@ -29,7 +29,9 @@ Route::group([
         Route::get('/', [HomeController::class, 'index'])->name('homepage');
         Route::post('/', [ConsumerController::class, 'postOffer'])->name('post.offer');
 
-        Route::post('/subscribe', [NewsletterEmailController::class, 'index'])->name('subscribe.email');
+        Route::post('/subscribe', [NewsletterEmailController::class, 'index'])
+            ->middleware('throttle:8,1')
+            ->name('subscribe.email');
 
         Route::resource('/unsubscribe', UnsubscribeIndexController::class)->only(['index', 'store']);
 

@@ -170,6 +170,8 @@
 
     @include('components.footer')
 
+    @include('components.newsletter-drawer')
+
     @if (brand_setting('cookie') === 'true')
         @include('components.cookies-notification')
     @endif

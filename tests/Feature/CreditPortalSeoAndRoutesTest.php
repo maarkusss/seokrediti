@@ -317,4 +317,46 @@ class CreditPortalSeoAndRoutesTest extends TestCase
         $this->assertSame('MansKredits.lv', brand_name());
         $this->assertSame('info@manskredits.lv', brand_email());
     }
+
+    public function test_newsletter_subscription_with_captcha_and_hoi_token_creation(): void
+    {
+        // Rejects wrong CAPTCHA
+        $badResponse = $this->withSession(['captcha_code' => 'XY89'])
+            ->postJson('/subscribe', [
+                'email' => 'abone@credito.lv',
+                'captcha' => 'WRONG',
+                'consent' => 1,
+            ]);
+
+        $badResponse->assertStatus(422);
+        $badResponse->assertJsonFragment(['status' => 'error', 'field' => 'captcha']);
+
+        // Accepts valid CAPTCHA and creates consumer + hoi_token
+        $goodResponse = $this->withSession(['captcha_code' => 'XY89'])
+            ->postJson('/subscribe', [
+                'email' => 'abone@credito.lv',
+                'captcha' => 'xy89',
+                'consent' => 1,
+            ]);
+
+        $goodResponse->assertStatus(200);
+        $goodResponse->assertJsonFragment(['status' => 'ok']);
+
+        $this->assertDatabaseHas('consumers', [
+            'email' => 'abone@credito.lv',
+            'subscribed' => 1,
+            'email_notifications' => 1,
+        ]);
+
+        // Re-subscribing an existing email updates token without fatal redeclare error
+        $repeatResponse = $this->withSession(['captcha_code' => 'ZZ22'])
+            ->postJson('/subscribe', [
+                'email' => 'abone@credito.lv',
+                'captcha' => 'zz22',
+                'consent' => 1,
+            ]);
+
+        $repeatResponse->assertStatus(200);
+        $repeatResponse->assertJsonFragment(['status' => 'ok']);
+    }
 }

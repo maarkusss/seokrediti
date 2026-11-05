@@ -58,7 +58,7 @@ abstract class PageSpeed
      */
     protected function shouldProcessPageSpeed($request, $response)
     {
-        if (!config('page-speed.enable', filter_var(env('LARAVEL_MINIFY', false), FILTER_VALIDATE_BOOLEAN))) {
+        if (!config('page-speed.enable', filter_var(env('LARAVEL_MINIFY', true), FILTER_VALIDATE_BOOLEAN))) {
             return false;
         }
 

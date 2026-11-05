@@ -82,8 +82,13 @@
     <link rel="mask-icon" href="/safari-pinned-tab.svg?v=2" color="#9E1B1B">
     <link rel="manifest" href="{{ route('manifest.json') }}">
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=source-serif-4:400,400i,600,700|ibm-plex-sans:400,500,600,700&display=swap">
+    {{-- Non-blocking font loading (eliminates 750ms render-blocking chain) --}}
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.bunny.net/css?family=source-serif-4:400,400i,600,700|ibm-plex-sans:400,600&display=swap">
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=source-serif-4:400,400i,600,700|ibm-plex-sans:400,600&display=swap" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.bunny.net/css?family=source-serif-4:400,400i,600,700|ibm-plex-sans:400,600&display=swap">
+    </noscript>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

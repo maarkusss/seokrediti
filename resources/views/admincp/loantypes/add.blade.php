@@ -176,7 +176,7 @@
 
                                 <input name="display_dropdown" type="hidden" value="0">
                                 <label class="relative flex items-center gap-3 cursor-pointer select-none">
-                                    <input name="display_dropdown" type="checkbox" value="1"
+                                    <input name="display_dropdown" type="checkbox" value="1" checked
                                         class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 transition-colors">
                                     <span class="text-sm font-medium text-slate-700">Display under dropdown</span>
                                 </label>

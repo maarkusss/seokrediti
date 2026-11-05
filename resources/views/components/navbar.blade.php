@@ -16,7 +16,7 @@
         $languages = \App\Models\Admincp\Settings::where('name', 'lang')->get();
 
         $loanTypes = \App\Models\Admincp\LoanTypes\LoanTypes::with(['children' => function ($q) {
-            $q->where('active', true)->where('display_dropdown', true)->orderBy('order');
+            $q->where('active', true)->orderBy('order');
         }])
             ->where('lang', $locale)
             ->where('active', true)
@@ -78,13 +78,26 @@
                         $subItems = $navLoan->children ?? collect();
                         $isActive = request()->is($navLoan->route_name) || request()->is($navLoan->route_name . '/*');
                     @endphp
-                    <li class="relative" @if ($subItems->isNotEmpty()) x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @endif>
-                        <a href="{{ route('section', ['name' => $navLoan->route_name]) }}"
-                           class="nav-link-editorial block px-3.5 py-3 {{ $isActive ? 'text-claret' : 'text-ink hover:text-claret' }}">
-                            {{ clean_legacy_brand($navLoan->name) }}
-                        </a>
-                        @if ($isActive)
+                    <li class="relative" @if ($subItems->isNotEmpty()) x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @keydown.escape.window="open = false" @endif>
+                        <div class="flex items-center">
+                            <a href="{{ route('section', ['name' => $navLoan->route_name]) }}"
+                               class="{{ $subItems->isEmpty() ? 'nav-link-editorial' : '' }} inline-flex items-center gap-1.5 px-3.5 py-3 transition-colors {{ $isActive ? 'text-claret' : 'text-ink hover:text-claret' }}">
+                                <span>{{ clean_legacy_brand($navLoan->name) }}</span>
+                                @if ($subItems->isNotEmpty())
+                                    <svg class="w-3 h-3 text-ink-muted transition-transform duration-200"
+                                         :class="open ? 'rotate-180 text-claret' : ''"
+                                         viewBox="0 0 12 12"
+                                         fill="none"
+                                         aria-hidden="true">
+                                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="square"/>
+                                    </svg>
+                                @endif
+                            </a>
+                        </div>
+                        @if ($isActive && $subItems->isEmpty())
                             <span class="absolute left-3.5 right-3.5 -bottom-px h-[3px] bg-claret" aria-hidden="true"></span>
+                        @elseif ($isActive && $subItems->isNotEmpty())
+                            <span x-show="!open" class="absolute left-3.5 right-3.5 -bottom-px h-[3px] bg-claret" aria-hidden="true"></span>
                         @endif
 
                         @if ($subItems->isNotEmpty())
@@ -96,17 +109,34 @@
                                  x-transition:leave="transition ease-in duration-100"
                                  x-transition:leave-start="opacity-100 translate-y-0"
                                  x-transition:leave-end="opacity-0 -translate-y-1"
-                                 class="absolute left-0 top-full z-50 w-64 bg-paper-light border border-ink border-t-0">
-                                <a href="{{ route('section', ['name' => $navLoan->route_name]) }}"
-                                   class="block px-4 py-2.5 border-b border-rule font-semibold hover:text-claret">
-                                    Visi {{ mb_strtolower(clean_legacy_brand($navLoan->name)) }}
-                                </a>
-                                @foreach ($subItems as $sub)
-                                    <a href="{{ route('section.deep', ['name' => $navLoan->route_name, 'deep_name' => $sub->route_name]) }}"
-                                       class="block px-4 py-2 font-normal text-ink-soft hover:text-claret {{ !$loop->last ? 'border-b border-rule' : '' }}">
-                                        {{ clean_legacy_brand($sub->name) }}
-                                    </a>
-                                @endforeach
+                                 class="absolute left-0 top-full z-50 w-72">
+                                <div class="bg-paper-light border border-ink border-t-0 shadow-[4px_4px_0_0_rgba(21,20,18,0.12)]">
+                                    {{-- Dropdown Kicker Header --}}
+                                    <div class="px-4 py-2 bg-paper border-b border-rule flex items-center justify-between">
+                                        <span class="text-[10px] font-bold uppercase tracking-[0.14em] text-ink-muted">Apakšsadaļas</span>
+                                        <a href="{{ route('section', ['name' => $navLoan->route_name]) }}"
+                                           class="text-[11px] font-semibold text-claret hover:underline underline-offset-2">
+                                            Visi piedāvājumi →
+                                        </a>
+                                    </div>
+
+                                    {{-- Child Category Links --}}
+                                    <div class="divide-y divide-rule">
+                                        @foreach ($subItems as $idx => $sub)
+                                            @php
+                                                $isChildActive = request()->is($navLoan->route_name . '/' . $sub->route_name);
+                                            @endphp
+                                            <a href="{{ route('section.deep', ['name' => $navLoan->route_name, 'deep_name' => $sub->route_name]) }}"
+                                               class="group flex items-baseline justify-between gap-3 px-4 py-2.5 text-[13px] transition-colors {{ $isChildActive ? 'bg-paper text-claret font-semibold' : 'text-ink hover:bg-paper hover:text-claret font-medium' }}">
+                                                <span class="flex items-baseline gap-2.5 min-w-0">
+                                                    <span class="font-mono text-[10px] text-ink-faint group-hover:text-claret num shrink-0">{{ str_pad((string) ($idx + 1), 2, '0', STR_PAD_LEFT) }}</span>
+                                                    <span class="truncate">{{ clean_legacy_brand($sub->name) }}</span>
+                                                </span>
+                                                <span class="text-xs text-ink-faint group-hover:text-claret group-hover:translate-x-0.5 transition-all shrink-0" aria-hidden="true">→</span>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
                             </div>
                         @endif
                     </li>
@@ -139,14 +169,28 @@
     <div x-cloak x-show="mobileOpen" id="mobile-navigation" class="lg:hidden border-b border-ink bg-paper-light">
         <div class="wrap py-2 font-sans">
             @foreach ($loanTypes as $navLoan)
-                <div class="border-b border-rule py-2.5">
-                    <a href="{{ route('section', ['name' => $navLoan->route_name]) }}" class="block font-serif text-lg font-semibold">
-                        {{ clean_legacy_brand($navLoan->name) }}
-                    </a>
-                    @if (($navLoan->children ?? collect())->isNotEmpty())
-                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-ink-muted">
-                            @foreach ($navLoan->children as $sub)
-                                <a href="{{ route('section.deep', ['name' => $navLoan->route_name, 'deep_name' => $sub->route_name]) }}" class="hover:text-claret">
+                @php
+                    $mobSubs = $navLoan->children ?? collect();
+                @endphp
+                <div class="border-b border-rule py-2.5" @if ($mobSubs->isNotEmpty()) x-data="{ subOpen: false }" @endif>
+                    <div class="flex items-center justify-between gap-2">
+                        <a href="{{ route('section', ['name' => $navLoan->route_name]) }}" class="font-serif text-lg font-semibold text-ink hover:text-claret">
+                            {{ clean_legacy_brand($navLoan->name) }}
+                        </a>
+                        @if ($mobSubs->isNotEmpty())
+                            <button type="button"
+                                    @click="subOpen = !subOpen"
+                                    class="px-2 py-1 text-xs font-mono text-ink-muted border border-rule bg-paper cursor-pointer"
+                                    :aria-expanded="subOpen.toString()">
+                                <span x-text="subOpen ? '−' : '+ ({{ $mobSubs->count() }})'">+ ({{ $mobSubs->count() }})</span>
+                            </button>
+                        @endif
+                    </div>
+                    @if ($mobSubs->isNotEmpty())
+                        <div x-cloak x-show="subOpen" class="mt-2 pl-3 border-l-2 border-claret space-y-1.5 py-1 text-sm">
+                            @foreach ($mobSubs as $sub)
+                                <a href="{{ route('section.deep', ['name' => $navLoan->route_name, 'deep_name' => $sub->route_name]) }}"
+                                   class="block text-ink-soft hover:text-claret">
                                     {{ clean_legacy_brand($sub->name) }}
                                 </a>
                             @endforeach

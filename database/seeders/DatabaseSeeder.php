@@ -717,105 +717,16 @@ class DatabaseSeeder extends Seeder
                 'order' => 3,
                 'parent_section_id' => null,
                 'name' => 'Blogs',
-                'title' => 'Finanšu pratības blogs un praktiski kredītu ceļveži',
-                'description' => 'Ekspertu ceļveži par GPL aprēķinu, auto līzingu vai auto kredītu, pārkreditāciju un gudru ģimenes budžeta plānošanu.',
-                'h1' => 'Finanšu ceļveži un padomi gudriem lēmumiem',
-                'h1_description' => 'Praktiski raksti bez sarežģīta banku žargona — kā aprēķināt reālās kredīta izmaksas, uzlabot kredītvēsturi un ietaupīt uz procentiem.',
+                'title' => 'Finanšu pratības blogs un praktiski kredītu ceļveži | Credito.lv',
+                'description' => 'Ekspertu analītika un praktiski ceļveži par GPL (gada procentu likmes) aprēķinu, auto finansēšanu, kredītu apvienošanu, maksātspējas novērtējumu un patēriņa kredītiem.',
+                'h1' => 'Finanšu analītika un praktiski ceļveži',
+                'h1_description' => 'Skaidri skaitļi un konkrēti piemēri bez banku žargona — kā aprēķināt patieso kredīta cenu (GPL), uzlabot savu reitingu un nepārmaksāt procentos.',
                 'text' => '',
                 'display_in_the_header' => 1,
             ]
         );
 
-        $blogPostsData = [
-            [
-                'slug' => 'auto-kredits-vai-lizings-kas-izdevigak',
-                'order' => 1,
-                'name' => 'Auto kredīts vai auto līzings — kas ir izdevīgāk 2026. gadā?',
-                'title' => 'Auto kredīts vai auto līzings: pilns salīdzinājums un atšķirības',
-                'description' => 'Praktisks salīdzinājums starp auto kredītu un finanšu līzingu Latvijā: īpašumtiesības CSDD, pirmā iemaksa, KASKO prasības un GPL likmes.',
-                'image' => '/images/blog/auto-kredits-13.jpg',
-                'image_alt_text' => 'Auto kredīta un līzinga salīdzinājums',
-                'h1_description' => 'Plāno iegādāties automašīnu līdz 15 000 € vai dārgāku spēkratu no salona? Salīdzinām abus finansēšanas veidus soli pa solim.',
-                'text' => '<h2>Galvenā juridiskā un praktiskā atšķirība</h2>
-<p>Pērkot automašīnu ar finansējumu, pircējiem Latvijā ir divas galvenās izvēles: <strong>auto kredīts</strong> un <strong>auto līzings</strong>. Lai gan abi produkti palīdz iegādāties spēkratu, to nosacījumi būtiski atšķiras.</p>
-<h3>Kad izdevīgāks ir auto kredīts?</h3>
-<ul>
-<li>Automašīnas cena ir diapazonā no 1 500 € līdz 15 000 €.</li>
-<li>Vēlies, lai auto CSDD uzreiz tiktu reģistrēts uz Tava vārda bez turētāja atzīmes.</li>
-<li>Nevēlies maksāt 10%–15% pirmo iemaksu un obligāto KASKO apdrošināšanu.</li>
-<li>Vēlies vispirms saņemt naudu kontā un 30–60 dienu laikā mierīgi atrast labāko piedāvājumu no privātpersonas vai autoplača.</li>
-</ul>
-<h3>Kad labāka izvēle ir auto līzings?</h3>
-<p>Ja iegādājies mazlietotu vai jaunu auto vērtībā virs 15 000 € (īpaši elektromobili vai hibrīdauto ar zemām emisijām), banku auto līzings piedāvās zemāku mainīgo procentu likmi (piemēram, 1,9%–3,5% + EURIBOR). Šādā gadījumā zemāka procentu likme pilnībā atsver KASKO izmaksas.</p>',
-            ],
-            [
-                'slug' => 'kas-ir-gada-procentu-likme-gpl',
-                'order' => 2,
-                'name' => 'Kas ir gada procentu likme (GPL) un kāpēc tā ir svarīgākā?',
-                'title' => 'Kas ir GPL (Gada procentu likme)? Vienkāršs skaidrojums ar piemēriem',
-                'description' => 'Uzzini, kā atšķiras aizņēmuma procentu likme no GPL un kā izmantot GPL divu kredītu piedāvājumu precīzai salīdzināšanai.',
-                'image' => '/images/blog/kas-ir-gpl-8.jpg',
-                'image_alt_text' => 'Gada procentu likmes GPL aprēķins',
-                'h1_description' => 'Kāpēc divi aizdevumi ar vienādu mēneša procentu likmi var izmaksāt atšķirīgi? Atbilde slēpjas GPL formulā.',
-                'text' => '<h2>Aizņēmuma likme nav tas pats, kas GPL</h2>
-<p><strong>Gada procentu likme (GPL)</strong> ir Eiropas Savienībā vienots rādītājs, kas procentos uzrāda visas patērētāja kopējās kredīta izmaksas gadā. Tajā ietilpst ne tikai aizņēmuma procentu likme, bet arī līguma noformēšanas komisija, ikmēneša konta apkalpošanas maksa un citas obligātās maksas.</p>
-<h3>Praktisks piemērs</h3>
-<p>Ja Aizdevējs A piedāvā 12% gada procentu likmi un 150 € līguma noformēšanas maksu, bet Aizdevējs B piedāvā 14% gada procentu likmi ar 0 € noformēšanas maksu, mazākām summām un īsākam termiņam Aizdevēja B piedāvājums ar zemāku GPL būs reāli lētāks eiro izteiksmē.</p>',
-            ],
-            [
-                'slug' => 'ka-apvienot-vairakus-kreditus-viena-maksajuma',
-                'order' => 3,
-                'name' => 'Kā apvienot vairākus kredītus vienā izdevīgākā maksājumā',
-                'title' => 'Kredītu apvienošana soli pa solim — Kā samazināt ikmēneša maksājumu',
-                'description' => 'Praktisks ceļvedis pārkreditācijai: kā aprēķināt esošo aizdevumu atlikumu un ietaupīt līdz pat 30–40% uz ikmēneša maksājumiem.',
-                'image' => '/images/blog/atro-kreditu-apvienosana-viena-1.jpg',
-                'image_alt_text' => 'Vairāku kredītu apvienošana vienā maksājumā',
-                'h1_description' => 'Ja dažādos datumos jāapmaksā vairākas kredītlīnijas vai patēriņa kredīti, refinansēšana palīdz atgūt kontroli pār budžetu.',
-                'text' => '<h2>4 soļi veiksmīgai kredītu apvienošanai</h2>
-<p>Pārkreditācija jeb <a href="/kreditu-apvienosana">kredītu apvienošana</a> nav jauns parāds — tā ir esošo dārgāko saistību aizstāšana ar vienu lētāku ilgtermiņa līgumu.</p>
-<ul>
-<li><strong>1. Apkopojiet atlikumus:</strong> izrakstiet visu aktīvo kredītu pamatsummas atlikumus pirmstermiņa atmaksai šodien.</li>
-<li><strong>2. Neiekļaujiet bezprocentu saistības:</strong> ja kādam līgumam ir ļoti zema bankas likme (piemēram, studiju kredītam), to apvienot nav izdevīgi.</li>
-<li><strong>3. Salīdziniet vismaz 2–3 piedāvājumus:</strong> pievērsiet uzmanību gan jaunajai GPL, gan kopējai atmaksājamai summai.</li>
-<li><strong>4. Aizveriet vecās kredītlīnijas:</strong> pēc pārkreditācijas lūdziet iepriekšējiem kreditoriem slēgt kredītlimita līgumus, lai nerastos kārdinājums tos izmantot atkārtoti.</li>
-</ul>',
-            ],
-            [
-                'slug' => 'ka-atbildigi-planot-ikmenesa-kredita-maksajumu',
-                'order' => 4,
-                'name' => '5 pārbaudīti principi drošai kredīta atmaksai bez stresa',
-                'title' => 'Kā plānot kredīta atmaksu un ātrāk dzēst saistības bez komisijas',
-                'description' => 'Uzzini par 50/30/20 budžeta metodi, drošības spilvenu un daļēju pirmstermiņa atmaksu, kas samazina procentu pārmaksu.',
-                'image' => '/images/blog/pieci-veidi-ka-atdot-kreditu-5.jpg',
-                'image_alt_text' => 'Atbildīga kredīta atmaksas plānošana',
-                'h1_description' => 'Pat neliela papildu iemaksa pamatsummas dzēšanai ik ceturksni var saīsināt kredīta termiņu par vairākiem mēnešiem.',
-                'text' => '<h2>Droša kredītslodze ģimenes budžetā</h2>
-<p>Pirms jebkura aizdevuma noformēšanas novērtē savu brīvo naudas plūsmu. Ja ikmēneša neto ienākumi ir 1 200 €, visu kredītu un līzingu maksājumu summai nevajadzētu pārsniegt 300 € – 360 € mēnesī.</p>
-<h3>Izmanto bezmaksas pirmstermiņa atmaksu</h3>
-<p>Saņemot prēmiju vai nodokļu pārmaksu no VID, novirzi daļu summas kredīta pamatsummas daļējai dzēšanai. Sazinies ar aizdevēju un norādi, ka vēlies samazināt līguma pamatsummu — tādējādi turpmākie procenti tiks rēķināti no mazāka atlikuma.</p>',
-            ],
-        ];
-
-        foreach ($blogPostsData as $post) {
-            Sections::updateOrCreate(
-                ['route_name' => $post['slug'], 'lang' => 'lv'],
-                [
-                    'type' => 'blog',
-                    'active' => 1,
-                    'order' => $post['order'],
-                    'parent_section_id' => $blogs->id,
-                    'name' => $post['name'],
-                    'title' => $post['title'],
-                    'description' => $post['description'],
-                    'h1' => $post['name'],
-                    'h1_description' => $post['h1_description'],
-                    'image' => $post['image'],
-                    'image_alt_text' => $post['image_alt_text'],
-                    'text' => $post['text'],
-                    'display_in_the_header' => 0,
-                ]
-            );
-        }
+        $this->call(BlogSeeder::class);
 
         $contact = Sections::updateOrCreate(
             ['route_name' => 'par-mums', 'lang' => 'lv'],

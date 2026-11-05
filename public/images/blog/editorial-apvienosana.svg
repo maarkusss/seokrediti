@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#F6F3EC"/>
+  <rect x="28" y="28" width="744" height="444" fill="#FBF9F4" stroke="#151412" stroke-width="2"/>
+  <line x1="60" y1="78" x2="740" y2="78" stroke="#151412" stroke-width="2.5"/>
+  <line x1="60" y1="84" x2="740" y2="84" stroke="#151412" stroke-width="1"/>
+  <text x="60" y="64" font-family="Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="3" fill="#9E1B1B">REFINANSĒŠANA · PĀRKREDITĀCIJA</text>
+  <text x="740" y="64" text-anchor="end" font-family="Georgia, serif" font-size="14" font-style="italic" fill="#6B675F">Credito.lv</text>
+
+  <!-- Left: Multiple scattered loans -->
+  <rect x="60" y="124" width="260" height="84" fill="#F6F3EC" stroke="#D6D0C3" stroke-width="1.5"/>
+  <text x="80" y="156" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#151412">1. Kredītlīnija · 115 €/mēn.</text>
+  <text x="80" y="182" font-family="Arial, sans-serif" font-size="12" fill="#6B675F">GPL 38,4% · Datums: 5.</text>
+
+  <rect x="60" y="224" width="260" height="84" fill="#F6F3EC" stroke="#D6D0C3" stroke-width="1.5"/>
+  <text x="80" y="256" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#151412">2. Patēriņa kredīts · 95 €/mēn.</text>
+  <text x="80" y="282" font-family="Arial, sans-serif" font-size="12" fill="#6B675F">GPL 26,0% · Datums: 14.</text>
+
+  <rect x="60" y="324" width="260" height="84" fill="#F6F3EC" stroke="#D6D0C3" stroke-width="1.5"/>
+  <text x="80" y="356" font-family="Georgia, serif" font-size="16" font-weight="700" fill="#151412">3. Dalītais maksājums · 65 €/mēn.</text>
+  <text x="80" y="382" font-family="Arial, sans-serif" font-size="12" fill="#6B675F">GPL 22,5% · Datums: 25.</text>
+
+  <!-- Convergence lines -->
+  <line x1="320" y1="166" x2="410" y2="266" stroke="#151412" stroke-width="2"/>
+  <line x1="320" y1="266" x2="410" y2="266" stroke="#151412" stroke-width="2"/>
+  <line x1="320" y1="366" x2="410" y2="266" stroke="#151412" stroke-width="2"/>
+
+  <!-- Right: Consolidated single loan -->
+  <rect x="410" y="150" width="330" height="232" fill="#FBF9F4" stroke="#151412" stroke-width="2.5"/>
+  <line x1="410" y1="158" x2="740" y2="158" stroke="#9E1B1B" stroke-width="3"/>
+  <text x="438" y="196" font-family="Arial, sans-serif" font-size="11" font-weight="700" letter-spacing="2" fill="#9E1B1B">VIENS APVIENOTS LĪGUMS</text>
+  <text x="438" y="252" font-family="Georgia, serif" font-size="48" font-weight="700" fill="#151412">178 € / mēn.</text>
+  <text x="438" y="284" font-family="Georgia, serif" font-size="16" font-style="italic" fill="#3A3833">Iepriekšējo 275 € vietā (−97 € mēnesī)</text>
+  <line x1="438" y1="308" x2="712" y2="308" stroke="#D6D0C3" stroke-width="1"/>
+  <text x="438" y="338" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#151412">Viens maksājuma datums · Zemāka GPL</text>
+  <text x="438" y="360" font-family="Arial, sans-serif" font-size="12" fill="#6B675F">Bezmaksas pirmstermiņa atmaksa</text>
+</svg>

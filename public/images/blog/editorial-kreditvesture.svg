@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#F6F3EC"/>
+  <rect x="28" y="28" width="744" height="444" fill="#FBF9F4" stroke="#151412" stroke-width="2"/>
+  <line x1="60" y1="78" x2="740" y2="78" stroke="#151412" stroke-width="2.5"/>
+  <line x1="60" y1="84" x2="740" y2="84" stroke="#151412" stroke-width="1"/>
+  <text x="60" y="64" font-family="Arial, sans-serif" font-size="13" font-weight="700" letter-spacing="3" fill="#9E1B1B">MAKSĀTSPĒJAS PROFILS · BANKU ANALĪTIKA</text>
+  <text x="740" y="64" text-anchor="end" font-family="Georgia, serif" font-size="14" font-style="italic" fill="#6B675F">Credito.lv</text>
+
+  <text x="60" y="130" font-family="Georgia, serif" font-size="24" font-weight="700" fill="#151412">5 kritēriji, ko algoritms pārbauda konta pārskatā</text>
+
+  <g font-family="Georgia, serif" font-size="17" fill="#151412">
+    <rect x="60" y="156" width="680" height="48" fill="#F6F3EC" stroke="#D6D0C3" stroke-width="1"/>
+    <text x="80" y="186" font-weight="700" fill="#9E1B1B">01.</text>
+    <text x="122" y="186" font-weight="700">DTI slodze (saistības pret neto algu)</text>
+    <text x="720" y="186" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#151412">Optimāli &lt; 30–35%</text>
+
+    <rect x="60" y="212" width="680" height="48" fill="#FBF9F4" stroke="#D6D0C3" stroke-width="1"/>
+    <text x="80" y="242" font-weight="700" fill="#9E1B1B">02.</text>
+    <text x="122" y="242" font-weight="700">Latvijas Bankas Kredītu reģistra disciplīna</text>
+    <text x="720" y="242" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#151412">0 kavētu dienu</text>
+
+    <rect x="60" y="268" width="680" height="48" fill="#F6F3EC" stroke="#D6D0C3" stroke-width="1"/>
+    <text x="80" y="298" font-weight="700" fill="#9E1B1B">03.</text>
+    <text x="122" y="298" font-weight="700">Oficiālo ienākumu regularitāte (VSAA / VID)</text>
+    <text x="720" y="298" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#151412">Vismaz 4–6 mēneši</text>
+
+    <rect x="60" y="324" width="680" height="48" fill="#FBF9F4" stroke="#D6D0C3" stroke-width="1"/>
+    <text x="80" y="354" font-weight="700" fill="#9E1B1B">04.</text>
+    <text x="122" y="354" font-weight="700">Azartspēļu un impulsīvo darījumu neesamība</text>
+    <text x="720" y="354" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#9E1B1B">Stingrs sarkanais karogs</text>
+
+    <rect x="60" y="380" width="680" height="48" fill="#F6F3EC" stroke="#D6D0C3" stroke-width="1"/>
+    <text x="80" y="410" font-weight="700" fill="#9E1B1B">05.</text>
+    <text x="122" y="410" font-weight="700">Brīvais atlikums mēneša beigās</text>
+    <text x="720" y="410" text-anchor="end" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#151412">Pozitīva bilance</text>
+  </g>
+</svg>

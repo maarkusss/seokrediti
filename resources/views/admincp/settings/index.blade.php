@@ -67,6 +67,15 @@
                             </div>
 
                             <div>
+                                <label for="setting_sender_name" class="block text-sm font-medium text-slate-700 mb-1.5">E-pastu sūtītāja vārds (Sender Name)</label>
+                                <input id="setting_sender_name"
+                                    class="w-full px-3.5 py-2 text-sm text-slate-800 bg-white border border-slate-300 rounded focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 shadow-xs transition-all"
+                                    name="sender_name" type="text" placeholder="piem., Credito.lv"
+                                    value="{{ old('sender_name', $sender_name->value ?? brand_sender_name()) }}">
+                                <p class="text-[11px] text-slate-500 mt-1">Vārds, kas saņēmējiem rādās izsūtītajos e-pastos (From Name) un hoi.fm integrācijā.</p>
+                            </div>
+
+                            <div>
                                 <label for="setting_brand_logo_file" class="block text-sm font-medium text-slate-700 mb-1.5">Augšupielādēt jaunu Logo (SVG, PNG, WEBP)</label>
                                 <input id="setting_brand_logo_file"
                                     class="w-full px-3 py-1.5 text-sm text-slate-700 bg-white border border-slate-300 rounded file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"

@@ -389,6 +389,21 @@ if (!function_exists('brand_email')) {
     }
 }
 
+if (!function_exists('brand_sender_name')) {
+    /**
+     * Outgoing e-mail Sender Name ("From Name") configurable in /admincp/settings.
+     */
+    function brand_sender_name(): string
+    {
+        $senderName = brand_setting('sender_name');
+        if (!empty($senderName) && stripos($senderName, 'eirokrediti') === false && stripos($senderName, 'atrie.lv') === false) {
+            return trim($senderName);
+        }
+
+        return brand_name();
+    }
+}
+
 if (!function_exists('brand_disclaimer')) {
     function brand_disclaimer(): string
     {

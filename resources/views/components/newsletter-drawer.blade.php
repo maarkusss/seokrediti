@@ -1,94 +1,25 @@
 @php
     $openByDefault = session('newsletter_open') ? true : false;
-    $flashSuccess = session('newsletter_success');
-    $flashError = session('newsletter_error');
+    $flashSuccess = (string) session('newsletter_success', '');
+    $flashError = (string) session('newsletter_error', '');
+    $initialStatusType = $flashSuccess !== '' ? 'success' : ($flashError !== '' ? 'error' : '');
+    $initialStatusMessage = $flashSuccess !== '' ? $flashSuccess : $flashError;
+    $drawerConfig = [
+        'openByDefault' => $openByDefault,
+        'initialEmail' => (string) old('email', ''),
+        'initialConsent' => (bool) old('consent', false),
+        'captchaBaseUrl' => route('captcha'),
+        'challengeUrl' => route('captcha.challenge'),
+        'subscribeUrl' => route('subscribe.email'),
+        'csrfToken' => csrf_token(),
+        'statusType' => $initialStatusType,
+        'statusMessage' => $initialStatusMessage,
+    ];
 @endphp
 
-<div x-data="{
-        open: @js($openByDefault),
-        loading: false,
-        email: @js(old('email', '')),
-        captcha: '',
-        consent: @js((bool) old('consent', false)),
-        websiteUrl: '',
-        captchaUrl: '',
-        statusType: @js($flashSuccess ? 'success' : ($flashError ? 'error' : '')),
-        statusMessage: @js($flashSuccess ?: ($flashError ?: '')),
-        init() {
-            if (this.open) {
-                this.refreshCaptcha();
-            }
-        },
-        openDrawer() {
-            this.open = true;
-            if (!this.captchaUrl) {
-                this.refreshCaptcha();
-            }
-            this.$nextTick(() => {
-                const emailInput = document.getElementById('nl-email');
-                if (emailInput && this.statusType !== 'success') {
-                    emailInput.focus();
-                }
-            });
-        },
-        closeDrawer() {
-            this.open = false;
-        },
-        refreshCaptcha() {
-            this.captchaUrl = '{{ route('captcha') }}?sid=' + Date.now() + Math.random().toString(36).substring(2, 6);
-        },
-        async submitForm() {
-            if (this.loading) return;
-            this.loading = true;
-            this.statusType = '';
-            this.statusMessage = '';
-
-            try {
-                const response = await fetch('{{ route('subscribe.email') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        email: this.email,
-                        captcha: this.captcha,
-                        consent: this.consent ? 1 : 0,
-                        website_url: this.websiteUrl
-                    })
-                });
-
-                const data = await response.json().catch(() => ({}));
-
-                if (response.ok && data.status === 'ok') {
-                    this.statusType = 'success';
-                    this.statusMessage = data.message || 'Paldies! Jūsu e-pasts ir veiksmīgi reģistrēts.';
-                    this.email = '';
-                    this.captcha = '';
-                    this.consent = false;
-                } else {
-                    this.statusType = 'error';
-                    if (response.status === 429) {
-                        this.statusMessage = 'Pārāk daudz mēģinājumu. Lūdzu, uzgaidiet minūti un mēģiniet vēlreiz.';
-                    } else {
-                        this.statusMessage = data.message || 'Neizdevās saglabāt pieteikumu. Lūdzu, pārbaudiet ievadītos datus.';
-                    }
-                    this.captcha = '';
-                    this.refreshCaptcha();
-                }
-            } catch (err) {
-                this.statusType = 'error';
-                this.statusMessage = 'Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz.';
-                this.refreshCaptcha();
-            } finally {
-                this.loading = false;
-            }
-        }
-    }"
-    @keydown.escape.window="if (open) closeDrawer()"
-    data-nosnippet>
+<div x-data='newsletterDrawer(@json($drawerConfig))'
+     @keydown.escape.window="if (open) closeDrawer()"
+     data-nosnippet>
 
     {{-- Bottom-Left Floating Editorial Trigger Button --}}
     <button type="button"
@@ -98,18 +29,13 @@
             x-transition:enter-start="opacity-0 translate-y-2"
             x-transition:enter-end="opacity-100 translate-y-0"
             aria-label="Pierakstīties kredītu jaunumiem"
-            class="fixed bottom-5 left-5 z-40 group flex items-center gap-3 bg-paper-light text-ink border border-ink border-l-4 border-l-claret px-4 py-2.5 shadow-[3px_3px_0_0_#151412] hover:bg-ink hover:text-paper-light transition-all duration-200 cursor-pointer">
+            class="fixed bottom-5 left-5 z-40 group inline-flex items-center gap-2.5 bg-paper-light text-ink border border-ink border-l-4 border-l-claret px-4 py-2.5 shadow-[3px_3px_0_0_#151412] hover:bg-ink hover:text-paper-light transition-all duration-200 cursor-pointer">
         <svg class="w-4 h-4 text-claret group-hover:text-paper-light transition-colors shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="square" stroke-linejoin="miter" d="M3 8l9 6 9-6M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1z" />
         </svg>
-        <div class="text-left leading-tight">
-            <span class="block text-[10px] font-bold uppercase tracking-[0.14em] text-claret group-hover:text-paper-dark transition-colors">
-                E-pasta apskats
-            </span>
-            <span class="block font-serif text-sm font-semibold">
-                Saņemt jaunumus
-            </span>
-        </div>
+        <span class="font-serif text-sm font-semibold leading-none">
+            Saņemt jaunumus
+        </span>
     </button>
 
     {{-- Backdrop Overlay --}}
@@ -232,17 +158,17 @@
                                class="field">
                     </div>
 
-                    {{-- CAPTCHA Verification --}}
+                    {{-- Hardened CAPTCHA Verification --}}
                     <div>
                         <label for="nl-captcha" class="label">Drošības kods (pret mēstulēm) *</label>
                         <div class="flex items-center gap-2.5">
-                            <div class="h-11 w-36 border border-rule bg-white flex items-center justify-center shrink-0 overflow-hidden">
+                            <div class="h-12 w-40 border border-ink bg-paper flex items-center justify-center shrink-0 overflow-hidden">
                                 <template x-if="captchaUrl">
                                     <img :src="captchaUrl"
                                          alt="Drošības kods"
-                                         width="144"
-                                         height="44"
-                                         class="h-11 w-36 object-cover">
+                                         width="160"
+                                         height="48"
+                                         class="h-12 w-40 object-cover select-none">
                                 </template>
                             </div>
                             <button type="button"

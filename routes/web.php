@@ -70,6 +70,7 @@ Route::group([
         Route::get('/sitemap.xml', [SeoController::class, 'sitemapXml'])->name('sitemap.xml');
         Route::get('/llms.txt', [SeoController::class, 'llmsTxt'])->name('llms.txt');
         Route::get('/captcha', [CaptchaController::class, 'generate'])->name('captcha');
+        Route::get('/captcha/challenge', [CaptchaController::class, 'challenge'])->name('captcha.challenge');
 
         Route::get('/{name}', [SectionController::class, 'index'])->name('section');
         Route::get('/{name}/{deep_name}', [DeepSectionController::class, 'index'])->name('section.deep');

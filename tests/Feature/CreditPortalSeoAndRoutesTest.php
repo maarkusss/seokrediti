@@ -305,6 +305,7 @@ class CreditPortalSeoAndRoutesTest extends TestCase
                 'name' => 'MansKredits.lv',
                 'brand_tagline' => 'Jaunās paaudzes kredītu salīdzinātājs',
                 'contact_email' => 'info@manskredits.lv',
+                'sender_name' => 'MansKredits Komanda',
                 'brand_disclaimer' => 'Aizņemies atbildīgi!',
                 'lang' => ['lv'],
                 'sitemap' => 'https://manskredits.lv',
@@ -316,6 +317,7 @@ class CreditPortalSeoAndRoutesTest extends TestCase
         $saveResponse->assertRedirect();
         $this->assertSame('MansKredits.lv', brand_name());
         $this->assertSame('info@manskredits.lv', brand_email());
+        $this->assertSame('MansKredits Komanda', brand_sender_name());
     }
 
     public function test_newsletter_subscription_with_captcha_and_hoi_token_creation(): void
@@ -358,5 +360,39 @@ class CreditPortalSeoAndRoutesTest extends TestCase
 
         $repeatResponse->assertStatus(200);
         $repeatResponse->assertJsonFragment(['status' => 'ok']);
+
+        // Rejects disposable e-mail domains
+        $disposableResponse = $this->withSession(['newsletter_captcha_code' => 'QW12'])
+            ->postJson('/subscribe', [
+                'email' => 'bot@mailinator.com',
+                'captcha' => 'QW12',
+                'consent' => 1,
+            ]);
+
+        $disposableResponse->assertStatus(422);
+        $disposableResponse->assertJsonFragment(['status' => 'error', 'field' => 'email']);
+
+        // Verifies cryptographic Proof-of-Work challenge endpoint & validation
+        $challenge = $this->getJson('/captcha/challenge');
+        $challenge->assertStatus(200);
+        $challengeData = $challenge->json();
+        $this->assertArrayHasKey('salt', $challengeData);
+        $this->assertArrayHasKey('sig', $challengeData);
+
+        // Rejects invalid PoW nonce when pow_sig is provided
+        $badPowResponse = $this->withSession(['newsletter_captcha_code' => 'PL99'])
+            ->postJson('/subscribe', [
+                'email' => 'real@credito.lv',
+                'captcha' => 'PL99',
+                'consent' => 1,
+                'pow_salt' => $challengeData['salt'],
+                'pow_ts' => $challengeData['ts'],
+                'pow_difficulty' => 1,
+                'pow_sig' => 'invalid_signature',
+                'pow_nonce' => '1',
+            ]);
+
+        $badPowResponse->assertStatus(422);
+        $badPowResponse->assertJsonFragment(['status' => 'error', 'field' => 'captcha']);
     }
 }

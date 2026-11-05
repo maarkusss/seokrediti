@@ -175,6 +175,166 @@ document.addEventListener("alpine:init", () => {
             this.visibleCount = count;
         },
     }));
+
+    Alpine.data("newsletterDrawer", (config = {}) => ({
+        open: Boolean(config.openByDefault || false),
+        loading: false,
+        email: String(config.initialEmail || ""),
+        captcha: "",
+        consent: Boolean(config.initialConsent || false),
+        websiteUrl: "",
+        captchaUrl: "",
+        captchaBaseUrl: String(config.captchaBaseUrl || "/captcha"),
+        challengeUrl: String(config.challengeUrl || "/captcha/challenge"),
+        subscribeUrl: String(config.subscribeUrl || "/subscribe"),
+        csrfToken: String(config.csrfToken || ""),
+        powSalt: "",
+        powTs: 0,
+        powDifficulty: 3,
+        powSig: "",
+        powNonce: "",
+        statusType: String(config.statusType || ""),
+        statusMessage: String(config.statusMessage || ""),
+
+        init() {
+            if (this.open) {
+                this.refreshCaptcha();
+            }
+        },
+
+        openDrawer() {
+            this.open = true;
+            if (!this.captchaUrl) {
+                this.refreshCaptcha();
+            }
+            this.$nextTick(() => {
+                const emailInput = document.getElementById("nl-email");
+                if (emailInput && this.statusType !== "success") {
+                    emailInput.focus();
+                }
+            });
+        },
+
+        closeDrawer() {
+            this.open = false;
+        },
+
+        async refreshCaptcha() {
+            this.captchaUrl =
+                this.captchaBaseUrl +
+                "?scope=newsletter&sid=" +
+                Date.now() +
+                Math.random().toString(36).substring(2, 6);
+            this.powNonce = "";
+
+            try {
+                const res = await fetch(this.challengeUrl + "?t=" + Date.now(), {
+                    headers: { Accept: "application/json" },
+                });
+                if (res.ok) {
+                    const ch = await res.json();
+                    this.powSalt = ch.salt || "";
+                    this.powTs = ch.ts || 0;
+                    this.powDifficulty = ch.difficulty || 3;
+                    this.powSig = ch.sig || "";
+                    this.solvePow();
+                }
+            } catch (e) {
+                // Silent fallback
+            }
+        },
+
+        async solvePow() {
+            if (!this.powSalt || !window.crypto || !window.crypto.subtle) return;
+            const prefix = "0".repeat(this.powDifficulty);
+            const encoder = new TextEncoder();
+            let nonce = 0;
+
+            while (nonce < 250000) {
+                const data = encoder.encode(this.powSalt + ":" + nonce);
+                const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hex = hashArray
+                    .map((b) => b.toString(16).padStart(2, "0"))
+                    .join("");
+
+                if (hex.startsWith(prefix)) {
+                    this.powNonce = String(nonce);
+                    return;
+                }
+                nonce++;
+            }
+        },
+
+        async submitForm() {
+            if (this.loading) return;
+            this.loading = true;
+            this.statusType = "";
+            this.statusMessage = "";
+
+            if (!this.powNonce && this.powSalt) {
+                await this.solvePow();
+            }
+
+            try {
+                const token =
+                    document.querySelector("meta[name=csrf-token]")?.content ||
+                    this.csrfToken;
+
+                const response = await fetch(this.subscribeUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": token,
+                    },
+                    body: JSON.stringify({
+                        email: this.email,
+                        captcha: this.captcha,
+                        consent: this.consent ? 1 : 0,
+                        website_url: this.websiteUrl,
+                        pow_salt: this.powSalt,
+                        pow_ts: this.powTs,
+                        pow_difficulty: this.powDifficulty,
+                        pow_sig: this.powSig,
+                        pow_nonce: this.powNonce,
+                    }),
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok && data.status === "ok") {
+                    this.statusType = "success";
+                    this.statusMessage =
+                        data.message ||
+                        "Paldies! Jūsu e-pasts ir veiksmīgi reģistrēts.";
+                    this.email = "";
+                    this.captcha = "";
+                    this.consent = false;
+                } else {
+                    this.statusType = "error";
+                    if (response.status === 429) {
+                        this.statusMessage =
+                            "Pārāk daudz mēģinājumu. Lūdzu, uzgaidiet minūti un mēģiniet vēlreiz.";
+                    } else {
+                        this.statusMessage =
+                            data.message ||
+                            "Neizdevās saglabāt pieteikumu. Lūdzu, pārbaudiet ievadītos datus.";
+                    }
+                    this.captcha = "";
+                    this.refreshCaptcha();
+                }
+            } catch (err) {
+                this.statusType = "error";
+                this.statusMessage =
+                    "Savienojuma kļūda. Lūdzu, mēģiniet vēlreiz.";
+                this.refreshCaptcha();
+            } finally {
+                this.loading = false;
+            }
+        },
+    }));
 });
 
 window.Alpine = Alpine;

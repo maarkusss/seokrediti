@@ -28,6 +28,7 @@ class CreateUserInHoiEmailProject
                 'projecttoken' => env('HOI_EMAIL_PROJECT_TOKEN'),
             ])->post('https://hoi.fm/api/mail', [
                 'mail' => $consumer->email,
+                'sender_name' => brand_sender_name(),
                 'fingerprint' => $consumer->fingerprint,
                 'lang' => App::getLocale(),
                 'registration' => 1,

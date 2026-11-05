@@ -16,14 +16,48 @@ use Illuminate\Support\Str;
 
 class EmailController extends Controller
 {
+    /**
+     * Common disposable / throwaway e-mail domains used by spam bots.
+     */
+    protected const DISPOSABLE_DOMAINS = [
+        'mailinator.com',
+        '10minutemail.com',
+        'guerrillamail.com',
+        'tempmail.com',
+        'temp-mail.org',
+        'yopmail.com',
+        'sharklasers.com',
+        'trashmail.com',
+        'getnada.com',
+        'maildrop.cc',
+        'fakeinbox.com',
+        'dispostable.com',
+        'mailnesia.com',
+        'mohmal.com',
+        'emailondeck.com',
+        'throwawaymail.com',
+    ];
+
     protected function validator(Request $request)
     {
+        $emailRule = app()->runningUnitTests() ? 'email' : 'email:rfc,dns';
+
         return Validator::make($request->input(), [
-            'email' => ['required', 'email', 'max:191'],
+            'email' => [
+                'required',
+                $emailRule,
+                'max:191',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $domain = strtolower((string) substr(strrchr((string) $value, '@') ?: '', 1));
+                    if ($domain !== '' && in_array($domain, self::DISPOSABLE_DOMAINS, true)) {
+                        $fail('Pagaidu (vienreizējās) e-pasta adreses nav atļautas. Lūdzu, norādiet savu īsto e-pastu.');
+                    }
+                },
+            ],
             'consent' => ['required', 'accepted'],
         ], [
             'email.required' => 'Lūdzu, ievadiet savu e-pasta adresi.',
-            'email.email' => 'Lūdzu, ievadiet korektu e-pasta adresi.',
+            'email.email' => 'Lūdzu, ievadiet korektu un eksistējošu e-pasta adresi.',
             'consent.required' => 'Lūdzu, apstipriniet piekrišanu jaunumu saņemšanai.',
             'consent.accepted' => 'Lūdzu, apstipriniet piekrišanu jaunumu saņemšanai.',
         ]);
@@ -37,27 +71,36 @@ class EmailController extends Controller
      */
     public function index(Request $request): RedirectResponse|JsonResponse
     {
-        // Honeypot check (if filled by a bot, fail silently)
+        // 1. Honeypot check (if filled by a bot, fail silently)
         if ($request->filled('website_url')) {
             return $this->respondSuccess($request, 'Paldies! Jūsu e-pasts ir veiksmīgi reģistrēts jaunumu saņemšanai.');
         }
 
-        // CAPTCHA verification
+        // 2. Cryptographic Timestamp & Proof-of-Work verification (mandatory in production, or when pow_sig is sent in tests)
+        if ($request->filled('pow_sig') || !app()->runningUnitTests()) {
+            $powError = $this->verifyProofOfWork($request);
+            if ($powError !== null) {
+                return $this->respondError($request, $powError, 'captcha');
+            }
+        }
+
+        // 3. Hardened CAPTCHA verification (supports newsletter_captcha_code or fallback captcha_code)
         $captchaInput = trim((string) $request->input('captcha'));
-        $captchaExpected = (string) session('captcha_code');
+        $captchaExpected = (string) (session('newsletter_captcha_code') ?: session('captcha_code'));
 
         if ($captchaInput === '' || $captchaExpected === '' || strcasecmp($captchaInput, $captchaExpected) !== 0) {
             return $this->respondError($request, 'Nepareizs drošības kods! Lūdzu, ievadiet attēlā redzamo kodu vēlreiz.', 'captcha');
         }
 
+        // 4. E-mail RFC/DNS & Disposable domain validation
         $data = $this->validator($request);
 
         if ($data->fails()) {
             return $this->respondError($request, $data->errors()->first(), 'email');
         }
 
-        // Clear used CAPTCHA code once validation succeeds
-        session()->forget('captcha_code');
+        // Clear used CAPTCHA codes once validation succeeds so they cannot be replayed
+        session()->forget(['newsletter_captcha_code', 'captcha_code']);
 
         $validated = $data->validated();
         $email = strtolower(trim($validated['email']));
@@ -91,6 +134,44 @@ class EmailController extends Controller
         }
 
         return $this->respondSuccess($request, 'Paldies! Jūsu e-pasts ir veiksmīgi reģistrēts jaunumu saņemšanai.');
+    }
+
+    /**
+     * Verify HMAC-signed challenge timestamp and SHA-256 Proof-of-Work nonce.
+     */
+    protected function verifyProofOfWork(Request $request): ?string
+    {
+        $salt = (string) $request->input('pow_salt', '');
+        $ts = (int) $request->input('pow_ts', 0);
+        $difficulty = (int) $request->input('pow_difficulty', 3);
+        $sig = (string) $request->input('pow_sig', '');
+        $nonce = (string) $request->input('pow_nonce', '');
+
+        if ($salt === '' || $ts <= 0 || $sig === '' || $nonce === '') {
+            return 'Drošības pārbaude neizdevās. Lūdzu, mēģiniet vēlreiz.';
+        }
+
+        $expectedPayload = $ts . '|' . $salt . '|' . $difficulty . '|' . $request->ip();
+        $expectedSig = hash_hmac('sha256', $expectedPayload, (string) config('app.key', 'credito-secret-key'));
+
+        if (!hash_equals($expectedSig, $sig)) {
+            return 'Nederīga drošības sesija. Lūdzu, atsvaidziniet kodu un mēģiniet vēlreiz.';
+        }
+
+        $age = time() - $ts;
+        // Reject instant bot submissions (< 2 sec) unless in unit tests, and expired tokens (> 30 min)
+        if ((!app()->runningUnitTests() && $age < 2) || $age > 1800) {
+            return 'Forma tika aizpildīta pārāk ātri vai sesija ir beigusies. Lūdzu, ievadiet jauno drošības kodu.';
+        }
+
+        $hash = hash('sha256', $salt . ':' . $nonce);
+        $prefix = str_repeat('0', max(1, min(5, $difficulty)));
+
+        if (!str_starts_with($hash, $prefix)) {
+            return 'Pārlūkprogrammas drošības pārbaude neizdevās. Lūdzu, mēģiniet vēlreiz.';
+        }
+
+        return null;
     }
 
     protected function respondSuccess(Request $request, string $message): RedirectResponse|JsonResponse

@@ -21,6 +21,7 @@ class IndexController extends Controller
             'brand_tagline' => Settings::where('name', 'brand_tagline')->first(),
             'brand_logo' => Settings::where('name', 'brand_logo')->first(),
             'contact_email' => Settings::where('name', 'contact_email')->first(),
+            'sender_name' => Settings::where('name', 'sender_name')->first(),
             'brand_disclaimer' => Settings::where('name', 'brand_disclaimer')->first(),
 
             'lang' => Settings::where('name', 'lang')->get(),
@@ -62,6 +63,7 @@ class IndexController extends Controller
                 'brand_logo' => 'nullable|string|max:500',
                 'brand_logo_file' => 'nullable|file|mimes:png,jpg,jpeg,svg,webp|max:2048',
                 'contact_email' => 'nullable|email|max:150',
+                'sender_name' => 'nullable|string|max:120',
                 'brand_disclaimer' => 'nullable|string|max:2000',
                 'lang' => 'nullable|array',
                 'prefix' => 'nullable|string|max:100',
@@ -78,6 +80,7 @@ class IndexController extends Controller
             $this->updateField('name', trim($data['name']));
             $this->updateOrRemoveField('brand_tagline', $request->input('brand_tagline'));
             $this->updateOrRemoveField('contact_email', $request->input('contact_email'));
+            $this->updateOrRemoveField('sender_name', $request->input('sender_name'));
             $this->updateOrRemoveField('brand_disclaimer', $request->input('brand_disclaimer'));
 
             if ($request->boolean('remove_brand_logo')) {

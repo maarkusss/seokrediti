@@ -28,9 +28,11 @@ class ContactUsController extends Controller
         }
 
         $to = brand_email();
-        $subject = '[' . brand_name() . '] Ziņojums no kontaktformas';
+        $senderName = brand_sender_name();
+        $encodedSender = '=?UTF-8?B?' . base64_encode($senderName) . '?=';
+        $subject = '[' . $senderName . '] Ziņojums no kontaktformas';
         $message = "Vārds: " . $data['name'] . "\nE-pasts: " . $data['email'] . "\n\nZiņojums:\n" . $data['question'];
-        $headers = 'From: ' . brand_email() . "\r\n" .
+        $headers = 'From: ' . $encodedSender . ' <' . brand_email() . ">\r\n" .
             'Reply-To: ' . $data['email'] . "\r\n" .
             'Content-Type: text/plain; charset=UTF-8' . "\r\n" .
             'X-Mailer: PHP/' . phpversion();

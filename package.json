@@ -15,7 +15,7 @@
         "vite": "^6.3.6"
     },
     "dependencies": {
-        "@tailwindcss/typography": "^0.5.7",
+        "@tailwindcss/typography": "^0.5.4",
         "apexcharts": "^3.35.5",
         "flatpickr": "^4.6.13",
         "imask": "^6.4.2",

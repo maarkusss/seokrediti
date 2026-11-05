@@ -1,241 +1,338 @@
-@extends('layouts.public')
-
-@section('title', 'Aizdevēja ' . $lender->name . ' atsauksmes un informācija')
-@section('description', 'Iespējams aplūkot un ierakstīt ' . $lender->name . ' atsauksmes. Apskati atsauksmes un informāciju vai arī ieraksti komentāru.')
-@section('keywords', $lender->keywords ?? '')
-
-@section('content')
 @php
-    $lvMonths = [
-        1 => 'janvārī', 2 => 'februārī', 3 => 'martā', 4 => 'aprīlī',
-        5 => 'maijā', 6 => 'jūnijā', 7 => 'jūlijā', 8 => 'augustā',
-        9 => 'septembrī', 10 => 'oktobrī', 11 => 'novembrī', 12 => 'decembrī'
-    ];
-    $currentMonth = $lvMonths[now()->month] ?? 'šomēnes';
+    $data = $lender->data;
+    $customTitle = $data && !empty($data->title)
+        ? clean_legacy_brand($data->title)
+        : ($lender->name . ' atsauksmes, procentu likmes un kontakti (' . date('Y') . ')');
+    $customDesc = $data && !empty($data->meta_description)
+        ? clean_legacy_brand($data->meta_description)
+        : ('Pārbaudītas klientu atsauksmes par ' . $lender->name . '. Uzziniet kredīta summas (' . $lender->min_amount . '–' . $lender->max_amount . ' €), GPL piemēru, darba laiku un rekvizītus.');
 
-    $topLenders = \App\Models\Admincp\Lenders\Lenders::where('active', 1)
-        ->where('top_lender', 1)
-        ->orderBy('position', 'asc')
-        ->take(5)
-        ->get();
+    $reviewCount = $reviews ? $reviews->count() : 0;
+    $breakdown = $ratingBreakdown ?? [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
 
-    if ($topLenders->isEmpty()) {
-        $topLenders = \App\Models\Admincp\Lenders\Lenders::where('active', 1)
-            ->orderBy('position', 'asc')
-            ->take(5)
-            ->get();
-    }
+    $workMf = $data->work_time_m_f ?? ($data->work_time ?? '08:00 – 20:00');
+    $workSa = $data->work_time_sa ?? '09:00 – 18:00';
+    $workSu = $data->work_time_su ?? '09:00 – 17:00';
 
-    $lendersList = \App\Models\Admincp\Lenders\Lenders::withCount('reviews')
-        ->orderBy('name', 'asc')
-        ->get();
+    $aprExample = $data && !empty($data->apr_example)
+        ? clean_legacy_brand($data->apr_example)
+        : ('Reprezentatīvs piemērs: aizņemoties 1 000 € uz 12 mēnešiem pie ' . $lender->name . ', kopējā atmaksājamā summa un GPL tiek aprēķināta individuāli pēc maksātspējas izvērtējuma.');
 
-    $minMonths = ($lender->min_term && $lender->min_term >= 30) ? round($lender->min_term / 30) : null;
-    $maxMonths = ($lender->max_term && $lender->max_term >= 30) ? round($lender->max_term / 30) : null;
-
-    $workMf = $lender->data->work_time_m_f ?? null;
-    $workSa = $lender->data->work_time_sa ?? null;
-    $workSu = $lender->data->work_time_su ?? null;
-
-    if (!$workMf || !$workSa || !$workSu) {
-        $parts = preg_split('/\s+(?=\d|—|-)/', trim($lender->receiving_time ?? ''));
-        $workMf = $workMf ?: ($parts[0] ?? '8:00 - 20:00');
-        $workSa = $workSa ?: ($parts[1] ?? $workMf);
-        $workSu = $workSu ?: ($parts[2] ?? $workMf);
-    }
+    $goUrl = route('go', ['lender_id' => $lender->id, 'lender_position' => 1]);
 @endphp
 
-<div class="container" itemscope itemtype="https://schema.org/FinancialService">
-    <div class="row">
-        <div class="col-md-12">
-            <h1 class="h2" itemprop="name">{{ $lender->name }} atsauksmes un informācija</h1>
-            <ol class="breadcrumb">
-                <li itemscope itemtype="https://data-vocabulary.org/Breadcrumb"><a itemprop="url" href="/"><span itemprop="title">eirokrediti.lv</span></a></li>
-                <li itemscope itemtype="https://data-vocabulary.org/Breadcrumb"><a itemprop="url" href="/atsauksmes"><span itemprop="title">kredītu atsauksmes</span></a></li>
-                <li itemscope itemtype="https://data-vocabulary.org/Breadcrumb"><a itemprop="url" href="/atsauksmes/{{ $lender->route_name }}"><span itemprop="title">{{ $lender->name }}</span></a></li>
-            </ol>
-        </div>
-        <div class="clearfix"></div>
+@extends('layouts.public')
 
-        <div class="col-md-8 container-large">
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <p>
-                        <a onclick="ga('send', 'event', 'Affiliate link', '{{ $lender->route_name }}');" rel="nofollow" target="_blank" href="/go/{{ $lender->route_name }}">
-                            <img itemprop="image" class="img-responsive" alt="{{ $lender->name }}" src="{{ $lender->image }}">
-                        </a>
-                    </p>
-                    <meta itemprop="priceRange" content="{{ $lender->min_amount }} &euro; - {{ $lender->max_amount }} &euro;">
-                    <p>Kredīta summa: no <strong>{{ $lender->min_amount }}</strong> &euro; līdz <strong>{{ $lender->max_amount }}</strong> &euro;</p>
-                    <p>Kredīta termiņš: no <strong>{{ $minMonths ?: ($lender->min_term ?: 30) }}</strong> {{ $minMonths ? 'mēnešiem' : 'dienām' }} līdz <strong>{{ $maxMonths ?: ($lender->max_term ?: 1080) }}</strong> {{ $maxMonths ? 'mēnešiem' : 'dienām' }}</p>
-                    <p>Aktivizācijas maksa: <strong>0.01 &euro;</strong></p>
-                    <p>Vecuma ierobežojums: <strong>{{ $lender->min_years ?: 18 }}</strong> - <strong>{{ $lender->max_years ?: 75 }}</strong> gadi</p>
-                    <p>Darba laiks darbadienās: <strong>{{ $workMf }}</strong></p>
-                    <p>Darba laiks sestdienā: <strong>{{ $workSa }}</strong></p>
-                    <p>Darba laiks svētdienā: <strong>{{ $workSu }}</strong></p>
-                    <a onclick="ga('send', 'event', 'Affiliate link', '{{ $lender->route_name }}');" rel="nofollow" target="_blank" class="get btn btn-success get-lg" href="/go/{{ $lender->route_name }}">Saņemt kredītu</a>
-                    <hr>
+@section('title', $customTitle)
+@section('description', $customDesc)
 
-                    @if (!empty($lender->data->section_html))
-                        {!! $lender->data->section_html !!}
-                    @else
-                        @if (!empty($lender->data->description))
-                            <p>{!! $lender->data->description !!}</p>
+@section('schema')
+    @php
+        $financialSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'FinancialService',
+            'name' => $lender->name,
+            'url' => url()->current(),
+            'image' => $lender->image ? url($lender->image) : null,
+            'priceRange' => $lender->min_amount . ' EUR - ' . $lender->max_amount . ' EUR',
+            'areaServed' => [
+                '@type' => 'Country',
+                'name' => 'Latvia',
+            ],
+        ];
+
+        if ($data && !empty($data->address)) {
+            $financialSchema['address'] = [
+                '@type' => 'PostalAddress',
+                'streetAddress' => $data->address,
+                'addressCountry' => 'LV',
+            ];
+        }
+        if ($data && !empty($data->phone)) {
+            $financialSchema['telephone'] = $data->phone;
+        }
+        if ($data && !empty($data->email)) {
+            $financialSchema['email'] = $data->email;
+        }
+
+        if ($reviewCount > 0 && (float) $average_rating > 0) {
+            $financialSchema['aggregateRating'] = [
+                '@type' => 'AggregateRating',
+                'ratingValue' => (string) $average_rating,
+                'bestRating' => '5',
+                'worstRating' => '1',
+                'reviewCount' => (int) $reviewCount,
+            ];
+        }
+    @endphp
+    <script type="application/ld+json">
+        {!! json_encode($financialSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+    </script>
+@endsection
+
+@section('content')
+    {{-- Lender Dossier Header --}}
+    <section class="border-b border-ink">
+        <div class="wrap py-8 sm:py-10">
+            <x-breadcrumbs />
+
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-6">
+                    <div class="w-32 h-16 border border-rule bg-white p-2.5 flex items-center justify-center shrink-0">
+                        @if (!empty($lender->image))
+                            <img src="{{ $lender->image }}" alt="{{ $lender->name }}" class="max-h-12 w-auto object-contain">
                         @else
-                            <p>Patēriņa kredīts līdz {{ $lender->max_amount }} € no {{ $lender->min_years ?: 18 }} līdz {{ $lender->max_years ?: 75 }} gadiem.</p>
-                        @endif
-                        <hr>
-                        <a onclick="ga('send', 'event', 'Affiliate link', '{{ $lender->route_name }}');" rel="nofollow" target="_blank" class="get btn btn-success get-lg" href="/go/{{ $lender->route_name }}">Saņemt kredītu</a>
-                    @endif
-
-                    <div class="row"></div>
-                    <h2>{{ $lender->name }} atsauksmes</h2>
-
-                    <div id="reviews">
-                        <div itemprop="aggregateRating" itemscope itemtype="https://schema.org/AggregateRating">
-                            <meta itemprop="ratingValue" content="{{ $average_rating }}">
-                            <meta itemprop="reviewCount" content="{{ $reviews ? $reviews->count() : 0 }}">
-                        </div>
-
-                        @if ($reviews && $reviews->count() > 0)
-                            @foreach ($reviews as $review)
-                                @php
-                                    $c = \Carbon\Carbon::parse($review->created_at);
-                                    $diffYears = (int)$c->diffInYears(now());
-                                    $diffMonths = (int)$c->diffInMonths(now());
-                                    if ($diffYears >= 1) {
-                                        $dateStr = $diffYears == 1 ? 'pirms gada' : ('pirms ' . $diffYears . ' gadiem');
-                                    } elseif ($diffMonths >= 1) {
-                                        $dateStr = $diffMonths == 1 ? 'pirms mēneša' : ('pirms ' . $diffMonths . ' mēnešiem');
-                                    } else {
-                                        $diffDays = (int)$c->diffInDays(now());
-                                        $dateStr = $diffDays == 0 ? 'šodien' : ($diffDays == 1 ? 'pirms dienas' : ('pirms ' . $diffDays . ' dienām'));
-                                    }
-                                @endphp
-                                <div class="row big-reviews{{ $loop->first ? ' review-first' : '' }}" itemprop="review" itemscope itemtype="https://schema.org/Review">
-                                    <div class="col-md-8 name">
-                                        <strong itemprop="author">{{ $review->name }}</strong>
-                                        <span class="lender">{{ $lender->name }} atsauksmes un informācija</span>
-                                        <span class="date">{{ $dateStr }}<meta itemprop="datePublished" content="{{ $review->created_at }}"></span>
-                                    </div>
-                                    <div class="col-md-4 text-right" itemprop="reviewRating" itemscope itemtype="https://schema.org/Rating">
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            @if ($review->rating >= $i)
-                                                <span class="glyphicon glyphicon-star"></span>
-                                            @else
-                                                <span class="glyphicon glyphicon-star-empty"></span>
-                                            @endif
-                                        @endfor
-                                        <meta itemprop="ratingValue" content="{{ $review->rating }}">
-                                    </div>
-                                    <div class="col-md-12">
-                                        <blockquote itemprop="description">{{ $review->text }}</blockquote>
-                                    </div>
-                                </div>
-                            @endforeach
+                            <span class="font-serif text-lg font-bold text-ink">{{ $lender->name }}</span>
                         @endif
                     </div>
 
-                    <h3>Pievieno atsauksmi</h3>
+                    <div>
+                        <div class="kicker mb-1.5">
+                            Licencēts aizdevējs Latvijā
+                            @if ($lender->zero_percent)
+                                · 0% pirmais kredīts
+                            @endif
+                        </div>
 
-                    @if (session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
+                        <h1 class="font-serif text-3xl sm:text-5xl font-bold tracking-[-0.02em] text-ink">
+                            {{ clean_legacy_brand($data->h1 ?? ($lender->name . ' — apskats un atsauksmes')) }}
+                        </h1>
+
+                        @if ($data && !empty($data->slogan))
+                            <p class="font-serif italic text-base text-ink-soft mt-1">{{ clean_legacy_brand($data->slogan) }}</p>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3 shrink-0">
+                    <a href="#pievienot-atsauksmi" class="btn-line">
+                        Rakstīt atsauksmi
+                    </a>
+                    <a href="{{ $goUrl }}"
+                       rel="nofollow sponsored noopener"
+                       target="_blank"
+                       class="btn-ink">
+                        Apskatīt {{ $lender->name }} piedāvājumu →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="wrap py-8 sm:py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div class="lg:col-span-8 space-y-12">
+                {{-- 1. Key Loan Terms & Company Information --}}
+                <section>
+                    <h2 class="font-serif text-2xl font-semibold text-ink pb-3 border-b border-ink">Kredīta nosacījumi un rekvizīti</h2>
+
+                    <dl class="grid grid-cols-2 sm:grid-cols-4 border-t border-l border-rule bg-paper-light">
+                        <div class="p-4 border-b border-r border-rule">
+                            <dt class="meta uppercase tracking-wider">Kredīta summa</dt>
+                            <dd class="font-serif text-xl font-semibold text-ink num mt-1">
+                                {{ number_format((int) $lender->min_amount, 0, ',', ' ') }}–{{ number_format((int) $lender->max_amount, 0, ',', ' ') }} €
+                            </dd>
+                        </div>
+                        <div class="p-4 border-b border-r border-rule">
+                            <dt class="meta uppercase tracking-wider">Termiņš</dt>
+                            <dd class="font-serif text-xl font-semibold text-ink num mt-1">
+                                {{ format_term_label($lender->min_term) }} – {{ format_term_label($lender->max_term) }}
+                            </dd>
+                        </div>
+                        <div class="p-4 border-b border-r border-rule">
+                            <dt class="meta uppercase tracking-wider">Vecums</dt>
+                            <dd class="font-serif text-xl font-semibold text-ink num mt-1">
+                                {{ $lender->min_years ?: 18 }}–{{ $lender->max_years ?: 75 }} gadi
+                            </dd>
+                        </div>
+                        <div class="p-4 border-b border-r border-rule">
+                            <dt class="meta uppercase tracking-wider">Naudas izmaksa</dt>
+                            <dd class="font-serif text-xl font-semibold text-claret num mt-1">
+                                ~ {{ $lender->receiving_time ?: '15' }} min
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="border-l-2 border-claret pl-4 py-2 my-6 text-sm text-ink-soft leading-relaxed">
+                        <strong class="text-ink">GPL un izmaksu piemērs:</strong> {{ $aprExample }}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 py-5 border-y border-rule text-sm">
+                        <div class="space-y-1.5">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-2">Juridiskā informācija</h3>
+                            @if ($data && !empty($data->company_name))
+                                <p class="text-ink-soft"><strong class="text-ink">Uzņēmums:</strong> {{ $data->company_name }}</p>
+                            @endif
+                            @if ($data && !empty($data->address))
+                                <p class="text-ink-soft"><strong class="text-ink">Adrese:</strong> {{ $data->address }}</p>
+                            @endif
+                            @if ($data && !empty($data->phone))
+                                <p class="text-ink-soft"><strong class="text-ink">Tālrunis:</strong> {{ $data->phone }}</p>
+                            @endif
+                            @if ($data && !empty($data->email))
+                                <p class="text-ink-soft"><strong class="text-ink">E-pasts:</strong> {{ $data->email }}</p>
+                            @endif
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <h3 class="text-xs font-semibold uppercase tracking-wider text-ink-muted mb-2">Darba laiks</h3>
+                            <p class="text-ink-soft"><strong class="text-ink">Darba dienās (P.–Pk.):</strong> {{ $workMf }}</p>
+                            <p class="text-ink-soft"><strong class="text-ink">Sestdienā:</strong> {{ $workSa }}</p>
+                            <p class="text-ink-soft"><strong class="text-ink">Svētdienā:</strong> {{ $workSu }}</p>
+                        </div>
+                    </div>
+
+                    @if ($data && !empty($data->description))
+                        <div class="mt-6 seo-prose no-dropcap">
+                            {!! clean_legacy_brand($data->description) !!}
                         </div>
                     @endif
-                    @if (session('error'))
-                        <div class="alert alert-danger">
-                            {{ session('error') }}
+                </section>
+
+                {{-- 2. Customer Rating Scorecard & Reviews List --}}
+                <section id="reviews" class="border-t-2 border-ink pt-6">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6 mb-6 border-b border-rule items-center">
+                        <div class="md:col-span-4">
+                            <div class="kicker mb-1">Lasītāju vērtējums</div>
+                            <div class="font-serif text-4xl sm:text-5xl font-bold text-ink num">
+                                {{ $reviewCount > 0 ? number_format((float) $average_rating, 1, ',', '') : '—' }}
+                                <span class="text-lg font-normal text-ink-muted">/ 5</span>
+                            </div>
+                            <div class="meta mt-1">
+                                Balstīts uz {{ $reviewCount }} {{ $reviewCount === 1 ? 'atsauksmi' : 'atsauksmēm' }}
+                            </div>
                         </div>
-                    @endif
 
-                    <div style="padding:10px 0;">
-                        <form name="send_feedback" method="post" action="{{ route('companies.review.create', ['companies_name' => $section->route_name, 'route_name' => $lender->route_name]) }}" id="form">
-                            @csrf
-                            <input type="hidden" name="lenderID" value="{{ $lender->id }}">
-
-                            <div style="padding-bottom:10px;">
-                                <label for="send_feedback_name" style="padding:0 0 2px 5px;font-weight:normal;display:block;margin:0;">Vārds <span style="color:#D50000;">*</span></label>
-                                <input id="send_feedback_name" class="form-control" type="text" name="name" value="{{ old('name') }}" required />
-                            </div>
-                            <div style="padding-bottom:10px;">
-                                <label for="send_feedback_rating" style="padding:0 0 2px 5px;font-weight:normal;display:block;margin:0;">Vērtējums <span style="color:#D50000;">*</span></label>
-                                <select id="send_feedback_rating" class="form-control" name="rating" required>
-                                    <option value="">Izvēlies vērtējumu</option>
-                                    <option value="1" {{ old('rating') == '1' ? 'selected' : '' }}>1 zvaigzne</option>
-                                    <option value="2" {{ old('rating') == '2' ? 'selected' : '' }}>2 zvaigznes</option>
-                                    <option value="3" {{ old('rating') == '3' ? 'selected' : '' }}>3 zvaigznes</option>
-                                    <option value="4" {{ old('rating') == '4' ? 'selected' : '' }}>4 zvaigznes</option>
-                                    <option value="5" {{ old('rating') == '5' ? 'selected' : '' }}>5 zvaigznes</option>
-                                </select>
-                            </div>
-                            <div style="padding-bottom:10px;">
-                                <label for="send_feedback_comment" style="padding:0 0 2px 5px;font-weight:normal;display:block;margin:0;">Komentārs </label>
-                                <textarea id="send_feedback_comment" class="form-control" name="comment" cols="20" rows="5" style="overflow:auto" required>{{ old('comment') }}</textarea>
-                            </div>
-
-                            <div style="padding-bottom:10px;">
-                                <div style="position:relative;width:200px;height:70px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;overflow:hidden;margin-bottom:8px;">
-                                    <img src="{{ route('captcha') }}" id="captcha" alt="Drošības kods" style="width:200px;height:70px;display:block;" />
-                                    <a href="javascript:;" onclick="document.getElementById('captcha').src='{{ route('captcha') }}?sid='+Math.random();document.getElementById('captcha-form').focus();" title="Atjaunot drošības kodu" style="position:absolute;top:4px;right:4px;background:rgba(255,255,255,0.9);border:1px solid #cbd5e1;border-radius:3px;padding:3px 5px;display:inline-flex;align-items:center;justify-content:center;line-height:0;text-decoration:none;">
-                                        <svg style="width:16px;height:16px;color:#2563eb;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                        </svg>
-                                    </a>
+                        <div class="md:col-span-8 space-y-1.5">
+                            @foreach ([5, 4, 3, 2, 1] as $star)
+                                @php
+                                    $cnt = $breakdown[$star] ?? 0;
+                                    $pct = $reviewCount > 0 ? round(($cnt / $reviewCount) * 100) : 0;
+                                @endphp
+                                <div class="flex items-center gap-3 text-xs">
+                                    <span class="w-14 font-semibold text-ink num">{{ $star }} zvaigz.</span>
+                                    <div class="flex-1 h-2 bg-paper-dark border border-rule">
+                                        <div class="h-full bg-ink" style="width: {{ $pct }}%"></div>
+                                    </div>
+                                    <span class="w-8 text-right text-ink-muted num">{{ $cnt }}</span>
                                 </div>
-                                <input type="text" class="form-control" name="captcha" id="captcha-form" maxlength="16" autocomplete="off" required placeholder="Ievadi drošības kodu" style="width:200px;" />
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <h2 class="font-serif text-2xl font-semibold text-ink mb-4">{{ $lender->name }} klientu atsauksmes</h2>
+
+                    @if ($reviewCount > 0)
+                        <div class="divide-y divide-rule border-y border-rule">
+                            @foreach ($reviews as $review)
+                                <article class="py-5">
+                                    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2 text-xs">
+                                        <div>
+                                            <span class="font-semibold text-ink">{{ $review->name ?: 'Klients' }}</span>
+                                            <span class="text-ink-faint mx-1.5">·</span>
+                                            <time class="text-ink-muted num">{{ \Carbon\Carbon::parse($review->created_at)->format('d.m.Y') }}</time>
+                                        </div>
+                                        <span class="font-semibold text-claret num">{{ $review->rating }}/5</span>
+                                    </div>
+                                    <p class="font-serif text-base text-ink-soft leading-relaxed">{{ clean_legacy_brand($review->text) }}</p>
+                                </article>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-sm text-ink-muted py-4 border-y border-rule">Par šo aizdevēju vēl nav pievienota neviena atsauksme. Esiet pirmais un padalieties ar savu pieredzi.</p>
+                    @endif
+                </section>
+
+                {{-- 3. Submit Review Form --}}
+                <section id="pievienot-atsauksmi"
+                         x-data="{ rating: {{ (int) old('rating', 5) }} }"
+                         class="border border-ink bg-paper-light p-6 sm:p-8 scroll-mt-20">
+                    <div class="kicker mb-1">Publicēt viedokli</div>
+                    <h3 class="font-serif text-2xl font-semibold text-ink mb-1">Pievienot atsauksmi par {{ $lender->name }}</h3>
+                    <p class="text-xs text-ink-muted mb-6">Jūsu pieredze palīdz citiem aizņēmējiem pieņemt pārdomātu lēmumu.</p>
+
+                    @include('components.contactsinfobox')
+
+                    <form method="POST"
+                          action="{{ route('companies.review.create', ['companies_name' => $section->route_name, 'route_name' => $lender->route_name]) }}"
+                          class="space-y-4 mt-4">
+                        @csrf
+                        <input type="hidden" name="lenderID" value="{{ $lender->id }}">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="rev-name" class="label">Jūsu vārds *</label>
+                                <input id="rev-name"
+                                       type="text"
+                                       name="name"
+                                       value="{{ old('name') }}"
+                                       required
+                                       placeholder="piem., Jānis"
+                                       class="field">
                             </div>
 
                             <div>
-                                <input class="form-control btn btn-sm btn-primary" name="send_feedback" value="Pievienot" type="submit" />
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 container-small">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h2 class="panel-title">TOP 5 <a href="/atrie-krediti">ātrie kredīti</a> {{ $currentMonth }}</h2>
-                </div>
-                <div class="panel-body loan-body">
-                    @foreach ($topLenders as $top)
-                        <div class="row small-loans">
-                            <div class="col-md-4 col-sm-4 col-xs-4 logo">
-                                <a onclick="ga('send', 'event', 'Affiliate link', '{{ $top->route_name }}');" rel="nofollow" target="_blank" href="{{ $top->affiliate_link ?: ('/go/' . $top->route_name) }}">
-                                    <img class="img-responsive" alt="{{ $top->name }}" src="{{ $top->image }}">
-                                </a>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-center amount">līdz <span>{{ $top->max_amount }}&euro;</span></div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-right">
-                                <a onclick="ga('send', 'event', 'Affiliate link', '{{ $top->route_name }}');" rel="nofollow" target="_blank" style="width:100%;" class="get btn btn-sm btn-success" href="{{ $top->affiliate_link ?: ('/go/' . $top->route_name) }}">Saņemt</a>
+                                <label for="rev-rating" class="label">Vērtējums *</label>
+                                <select id="rev-rating"
+                                        name="rating"
+                                        x-model.number="rating"
+                                        required
+                                        class="field font-semibold">
+                                    <option value="5">5 — Teicami</option>
+                                    <option value="4">4 — Labi</option>
+                                    <option value="3">3 — Viduvēji</option>
+                                    <option value="2">2 — Vāji</option>
+                                    <option value="1">1 — Slikti</option>
+                                </select>
                             </div>
                         </div>
-                    @endforeach
-                </div>
+
+                        <div>
+                            <label for="rev-comment" class="label">Jūsu atsauksme *</label>
+                            <textarea id="rev-comment"
+                                       name="comment"
+                                       rows="4"
+                                       required
+                                       placeholder="Pastāstiet par pieteikšanās ātrumu, apkalpošanu un nosacījumu skaidrību..."
+                                       class="field">{{ old('comment') }}</textarea>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-2">
+                            <div>
+                                <label for="captcha-form" class="label">Drošības kods *</label>
+                                <div class="flex items-center gap-3">
+                                    <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                                         data-lazy-src="{{ route('captcha') }}"
+                                         id="captcha" alt="Drošības kods" width="150" height="44"
+                                         loading="lazy" decoding="async"
+                                         class="h-11 w-36 border border-rule bg-white object-cover">
+                                    <button type="button"
+                                            onclick="document.getElementById('captcha').src='{{ route('captcha') }}?sid='+Math.random();document.getElementById('captcha-form').focus();"
+                                            class="btn-line btn-sm">
+                                        Jauns kods
+                                    </button>
+                                    <input id="captcha-form"
+                                           type="text"
+                                           name="captcha"
+                                           maxlength="16"
+                                           autocomplete="off"
+                                           required
+                                           placeholder="Kods"
+                                           class="field w-32">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-ink">
+                                Publicēt atsauksmi
+                            </button>
+                        </div>
+                    </form>
+                </section>
             </div>
 
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h2 class="panel-title">Atsauksmes</h2>
-                </div>
-                <div class="panel-body loan-body">
-                    @foreach ($lendersList as $sideLender)
-                        @php
-                            $isActive = ($sideLender->route_name == $lender->route_name);
-                        @endphp
-                        <div class="row small-links">
-                            <div class="col-md-8 col-xs-6">
-                                <a @if($isActive)class="active" @endif href="/atsauksmes/{{ $sideLender->route_name }}">{{ $sideLender->name }}</a>
-                            </div>
-                            <div class="col-md-4 col-xs-6 text-right count">{{ $sideLender->reviews_count }}</div>
-                        </div>
-                    @endforeach
-                </div>
+            <div class="lg:col-span-4 lg:pl-8 lg:border-l lg:border-rule">
+                <x-right-sidebar />
             </div>
         </div>
     </div>
-</div>
 @endsection

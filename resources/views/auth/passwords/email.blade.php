@@ -1,47 +1,44 @@
 @extends('layouts.app')
 
-@section('title', 'Password reset link - ' . env('APP_NAME'))
+@section('title', 'Paroles atjaunošana - ' . brand_name())
 
 @section('content')
     <div class="flex flex-col items-center justify-center w-full min-h-screen p-4 bg-slate-50">
-        <div class="flex items-center gap-3 mb-6">
-            <img src="/images/logo-coin.png" class="w-8 h-8 object-contain shrink-0" alt="eirokrediti.lv">
-            <div class="flex flex-col">
-                <span class="text-xl font-bold tracking-tight text-slate-900">eirokrediti.lv</span>
-                <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Admin Panel</span>
-            </div>
+        <div class="flex flex-col items-center gap-1.5 mb-6">
+            <x-brand-logo size="md" />
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">Vadības panelis</span>
         </div>
         @if ($errors->any())
-            <div class="flex items-center justify-start p-3 mb-4 bg-red-200 border border-red-800 rounded">
-                <span class="text-sm font-medium text-red-800">{{ $errors->first() }}</span>
+            <div class="flex items-center justify-start p-3 mb-4 bg-rose-50 border border-rose-200 rounded-xl">
+                <span class="text-sm font-medium text-rose-800">{{ $errors->first() }}</span>
             </div>
         @endif
         @if (session('status'))
-            <div class="flex items-center justify-start p-3 mb-4 bg-green-200 border border-green-800 rounded"
+            <div class="flex items-center justify-start p-3 mb-4 bg-emerald-50 border border-emerald-200 rounded-xl"
                  role="alert">
-                <span class="text-sm font-medium text-green-800">{{ session('status') }}</span>
+                <span class="text-sm font-medium text-emerald-800">{{ session('status') }}</span>
             </div>
         @endif
-        <div class="flex flex-col items-center justify-center w-full p-4 bg-white rounded sm:w-auto">
-            <h1 class="mb-4 text-2xl font-medium text-gray-700">{{ __('Reset password') }}</h1>
+        <div class="flex flex-col items-center justify-center w-full max-w-sm p-6 bg-white rounded-2xl border border-slate-200 shadow-xs">
+            <h1 class="mb-4 text-xl font-bold text-slate-800">{{ __('Reset password') }}</h1>
             <form method="POST"
                   action="{{ route('password.email') }}"
-                  class="w-full sm:w-auto">
+                  class="w-full">
                 @csrf
                 <div>
                     <label class="flex flex-col">
-                        <span class="mb-2 text-sm font-medium text-gray-600">{{ __('E-mail address') }}</span>
+                        <span class="mb-1.5 text-sm font-medium text-slate-700">{{ __('E-mail address') }}</span>
                         <input type="email"
                                name="email"
                                id="email"
                                value="{{ old('email') }}"
                                required
                                autocomplete="email"
-                               class="w-full px-3 py-2 text-gray-700 bg-gray-200 border rounded appearance-none sm:w-64">
+                               class="w-full px-3.5 py-2.5 text-slate-900 bg-white border border-slate-300 rounded-lg text-sm">
                     </label>
                 </div>
                 <button type="submit"
-                        class="w-full px-3 py-2 mt-6 text-sm font-medium text-center text-white bg-gray-700 rounded hover:bg-gray-800">
+                        class="w-full px-4 py-2.5 mt-5 text-sm font-semibold text-center text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer">
                     {{ __('Send password reset link') }}
                 </button>
             </form>

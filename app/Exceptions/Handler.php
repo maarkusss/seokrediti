@@ -3,9 +3,9 @@
 namespace App\Exceptions;
 
 use App\Models\Admincp\Settings;
-use Throwable;
 use GuzzleHttp\Client;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -31,10 +31,9 @@ class Handler extends ExceptionHandler
     /**
      * Report or log an exception.
      *
-     * @param  \Exception  $exception
+     * @param  \Throwable  $exception
      * @return void
      */
-
     public function report(Throwable $exception)
     {
         if ($this->shouldReport($exception) && app()->isProduction()) {
@@ -48,10 +47,9 @@ class Handler extends ExceptionHandler
      * Render an exception into an HTTP response.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Exception  $exception
+     * @param  \Throwable  $exception
      * @return \Illuminate\Http\Response
      */
-
     public function render($request, Throwable $exception)
     {
         return parent::render($request, $exception);
@@ -59,14 +57,18 @@ class Handler extends ExceptionHandler
 
     protected function exportToMonitoring(Throwable $e)
     {
+        $webhookUrl = env('MONITORING_WEBHOOK_URL');
+        if (empty($webhookUrl)) {
+            return;
+        }
+
         try {
             $client = new Client([
-                'verify' => false,
                 'connect_timeout' => 3,
                 'timeout' => 5,
             ]);
 
-            $client->post('https://www.monitoring.goodday.group/api/errors/cp', [
+            $client->post($webhookUrl, [
                 'headers' => [
                     'apikey' => Settings::retrieve('api_key'),
                     'Accept' => 'application/json',
@@ -74,9 +76,9 @@ class Handler extends ExceptionHandler
                 'json' => [
                     'error' => $e->getMessage(),
                     'status_code' => $e->getCode() > 200 && $e->getCode() < 600 ? $e->getCode() : 500,
-                    'site' => config('app.name'),
+                    'site' => brand_name(),
                     'site_url' => config('app.url'),
-                ]
+                ],
             ]);
         } catch (Throwable $monitoring_exception) {
         }

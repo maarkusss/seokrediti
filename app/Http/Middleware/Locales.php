@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Admincp\RedirectLink;
 use App\Models\Admincp\Settings;
 use Closure;
 use Illuminate\Support\Facades\App;
@@ -38,8 +37,8 @@ class Locales
         // Check if this request is for admin or auth
         $isAdminOrAuth = in_array($secondSegment, ['admincp', 'login', 'logout', 'register', 'forgot-password', 'reset-password']);
 
-        // 301 redirect legacy public /lv and /lv/... to clean root-based URLs matching eirokrediti.lv Google indexing
-        // But do not redirect /lv/admincp or /lv/login (keep /lv locale for admincp)
+        // 301 redirect legacy public /lv and /lv/... to clean root-based canonical URLs
+        // Keep /lv locale prefix for AdminCP and Auth routes
         if ($firstSegment === 'lv' && !$isAdminOrAuth) {
             $segments = $request->segments();
             array_shift($segments);

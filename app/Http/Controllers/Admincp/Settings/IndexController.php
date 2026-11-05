@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class IndexController extends Controller
 {
     /**
-     * Show the lenders index page.
+     * Show the global settings & white-label brand configuration page.
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
@@ -18,6 +18,11 @@ class IndexController extends Controller
     {
         return view('admincp.settings.index')->with([
             'name' => Settings::where('name', 'name')->first(),
+            'brand_tagline' => Settings::where('name', 'brand_tagline')->first(),
+            'brand_logo' => Settings::where('name', 'brand_logo')->first(),
+            'contact_email' => Settings::where('name', 'contact_email')->first(),
+            'brand_disclaimer' => Settings::where('name', 'brand_disclaimer')->first(),
+
             'lang' => Settings::where('name', 'lang')->get(),
             'prefix' => Settings::where('name', 'prefix')->first(),
             'api_key' => Settings::where('name', 'api_key')->first(),
@@ -52,32 +57,57 @@ class IndexController extends Controller
 
         if ($action === 'save_main_information' || $action === 'save_all') {
             $data = $request->validate([
-                'name' => 'required',
-                'lang' => 'required',
-                'prefix' => 'required',
-                'api_key' => 'required',
-                'individual_days_epc' => 'required',
-                'sitemap' => 'required',
-                'country_code' => 'required',
-                'phone_length' => 'required',
-                'manifest_json' => 'nullable',
-                'robots_txt' => 'nullable',
+                'name' => 'required|string|max:120',
+                'brand_tagline' => 'nullable|string|max:200',
+                'brand_logo' => 'nullable|string|max:500',
+                'brand_logo_file' => 'nullable|file|mimes:png,jpg,jpeg,svg,webp|max:2048',
+                'contact_email' => 'nullable|email|max:150',
+                'brand_disclaimer' => 'nullable|string|max:2000',
+                'lang' => 'nullable|array',
+                'prefix' => 'nullable|string|max:100',
+                'api_key' => 'nullable|string|max:255',
+                'individual_days_epc' => 'nullable',
+                'sitemap' => 'nullable|url',
+                'country_code' => 'nullable|string|max:10',
+                'phone_length' => 'nullable|string|max:10',
+                'manifest_json' => 'nullable|string',
+                'robots_txt' => 'nullable|string',
             ]);
 
-            $this->updateLang($data['lang']);
-            $this->updateField('name', $data['name']);
-            $this->updateField('prefix', $data['prefix']);
-            $this->updateField('api_key', $data['api_key']);
-            $this->updateField('sitemap', $data['sitemap']);
-            $this->updateField('individual_days_epc', $data['individual_days_epc']);
-            $this->updateField('country_code', $data['country_code']);
-            $this->updateField('phone_length', $data['phone_length']);
+            $this->updateLang(!empty($data['lang']) ? $data['lang'] : ['lv']);
+            $this->updateField('name', trim($data['name']));
+            $this->updateOrRemoveField('brand_tagline', $request->input('brand_tagline'));
+            $this->updateOrRemoveField('contact_email', $request->input('contact_email'));
+            $this->updateOrRemoveField('brand_disclaimer', $request->input('brand_disclaimer'));
+
+            if ($request->boolean('remove_brand_logo')) {
+                $this->updateOrRemoveField('brand_logo', null);
+            } elseif ($request->hasFile('brand_logo_file')) {
+                $file = $request->file('brand_logo_file');
+                $ext = strtolower($file->getClientOriginalExtension() ?: 'png');
+                $filename = 'logo-' . date('YmdHis') . '.' . $ext;
+                $targetDir = public_path('images/brand');
+                if (!is_dir($targetDir)) {
+                    mkdir($targetDir, 0755, true);
+                }
+                $file->move($targetDir, $filename);
+                $this->updateField('brand_logo', '/images/brand/' . $filename);
+            } else {
+                $this->updateOrRemoveField('brand_logo', $request->input('brand_logo'));
+            }
+
+            $this->updateField('prefix', $data['prefix'] ?? (Settings::retrieve('prefix') ?: 'krediti'));
+            $this->updateField('api_key', $data['api_key'] ?? (Settings::retrieve('api_key') ?: 'portal_local_api_key'));
+            $this->updateField('sitemap', $data['sitemap'] ?? (Settings::retrieve('sitemap') ?: config('app.url', 'http://localhost')));
+            $this->updateField('individual_days_epc', $data['individual_days_epc'] ?? (Settings::retrieve('individual_days_epc') ?: '30'));
+            $this->updateField('country_code', $data['country_code'] ?? (Settings::retrieve('country_code') ?: '371'));
+            $this->updateField('phone_length', $data['phone_length'] ?? (Settings::retrieve('phone_length') ?: '8'));
             $this->updateOrRemoveField('head_code', $request->head_code);
             $this->updateOrRemoveField('head_code_go', $request->head_code_go);
             $this->updateOrRemoveField('manifest_code', $request->manifest_code);
             $this->updateOrRemoveField('cookie', $request->cookie);
-            $this->updateOrRemoveField('manifest_json', $data['manifest_json']);
-            $this->updateOrRemoveField('robots_txt', $data['robots_txt']);
+            $this->updateOrRemoveField('manifest_json', $data['manifest_json'] ?? null);
+            $this->updateOrRemoveField('robots_txt', $data['robots_txt'] ?? null);
         }
 
         if ($action === 'save_config' || $action === 'save_all') {
@@ -122,7 +152,7 @@ class IndexController extends Controller
             $value = 20;
         }
 
-        if ($value == null) {
+        if ($value === null || $value === '') {
             Settings::where('name', $name)->delete();
         } else {
             $settings = Settings::where('name', $name)->first();

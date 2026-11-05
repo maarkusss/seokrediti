@@ -5,17 +5,51 @@ module.exports = {
     corePlugins: {
         container: false,
     },
-    content: ["./resources/**/*.blade.php"],
-    darkMode: "media",
+    content: [
+        "./resources/**/*.blade.php",
+        "./resources/js/**/*.js",
+        "./app/View/**/*.php",
+    ],
+    darkMode: "class",
     theme: {
         extend: {
-            backgroundImage: {
-                banner: "url('/images/banner.jpg')",
-                overlay: "url('/images/overlay.png')",
-            },
             colors: {
                 gray: colors.neutral,
                 "gray-slate": colors.slate,
+
+                // Editorial / newspaper palette (public site)
+                paper: {
+                    DEFAULT: "#F6F3EC",
+                    light: "#FBF9F4",
+                    dark: "#ECE7DC",
+                },
+                ink: {
+                    DEFAULT: "#151412",
+                    soft: "#3A3833",
+                    muted: "#6B675F",
+                    faint: "#9A958A",
+                },
+                rule: {
+                    DEFAULT: "#D6D0C3",
+                    strong: "#151412",
+                },
+                claret: {
+                    DEFAULT: "#9E1B1B",
+                    dark: "#7A1414",
+                    tint: "#F3E4DF",
+                },
+
+                // Legacy keys kept for AdminCP compatibility
+                forest: {
+                    50: "#f0fdf8",
+                    100: "#ccfbeb",
+                    500: "#10b981",
+                    600: "#059669",
+                    700: "#047857",
+                    800: "#0b2e28",
+                    900: "#0b221e",
+                    950: "#071917",
+                },
                 primary: {
                     light: "#3b82f6",
                     normal: "#2563eb",
@@ -27,8 +61,8 @@ module.exports = {
                     dark: "#f9e5df",
                 },
                 background: {
-                    normal: "#f0f0f0",
-                    dark: "#2b2b2b",
+                    normal: "#f8fafc",
+                    dark: "#0b221e",
                 },
             },
             screens: {
@@ -36,50 +70,17 @@ module.exports = {
                 ...defaultTheme.screens,
             },
             fontFamily: {
-                helvetica: [
-                    "Helvetica Neue",
-                    "Helvetica",
-                    ...defaultTheme.fontFamily.sans,
-                ],
+                serif: ["\"Source Serif 4\"", "Georgia", "Cambria", "\"Times New Roman\"", "serif"],
+                sans: ["\"IBM Plex Sans\"", "\"Helvetica Neue\"", "Arial", ...defaultTheme.fontFamily.sans],
+                mono: ["\"IBM Plex Mono\"", ...defaultTheme.fontFamily.mono],
+                display: ["\"Source Serif 4\"", "Georgia", "serif"],
+                helvetica: ["\"Helvetica Neue\"", "Helvetica", ...defaultTheme.fontFamily.sans],
             },
-            typography: (theme) => ({
-                DEFAULT: {
-                    css: {
-                        color: "#333",
-                        a: {
-                            color: theme("colors.primary.normal"),
-                            "text-decoration-line": "none",
-                            "&:hover": {
-                                color: theme("colors.primary.dark"),
-                                "text-decoration-line": "underline",
-                            },
-                        },
-                        h1: {
-                            "font-size": "1.5rem !important",
-                            "line-height": "2rem !important",
-                            "font-weight": "500 !important",
-                        },
-                        h2: {
-                            "font-size": "1.5rem !important",
-                            "line-height": "2rem !important",
-                            "font-weight": "500 !important",
-                            margin: "20px 0 10px !important",
-                        },
-                        h3: {
-                            "font-size": "1.25rem !important",
-                            "line-height": "1.75rem !important",
-                            "font-weight": "500 !important",
-                            margin: "20px 0 10px !important",
-                        },
-                        h4: {
-                            "font-size": "1.125rem !important",
-                            "line-height": "1.75rem !important",
-                            "font-weight": "500 !important",
-                            margin: "10px 0 !important",
-                        },
-                    },
-                },
-            }),
+            boxShadow: {
+                xs: "0 1px 2px 0 rgba(15, 23, 42, 0.04)",
+                card: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px 0 rgba(15, 23, 42, 0.04)",
+                "card-hover": "0 14px 30px -6px rgba(11, 34, 30, 0.10), 0 4px 10px -2px rgba(11, 34, 30, 0.05)",
+            },
             keyframes: {
                 slide: {
                     "0%": { transform: "translateX(0px)" },
@@ -107,7 +108,9 @@ module.exports = {
         },
     },
     plugins: [
-        require("@tailwindcss/forms"),
+        require("@tailwindcss/forms")({
+            strategy: "class",
+        }),
         require("@tailwindcss/typography"),
     ],
 };

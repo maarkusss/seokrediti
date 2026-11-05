@@ -16,15 +16,16 @@ class IndexController extends Controller
      */
     public function index()
     {
+        $geoIpEndpoint = env('GEOIP_API_URL');
         $visitorsWithOutCountyCode = collect($this->getAllVisitors()->items())->where('country', null);
-        if ($visitorsWithOutCountyCode->count() > 0) {
+        if (!empty($geoIpEndpoint) && $visitorsWithOutCountyCode->count() > 0) {
             foreach ($visitorsWithOutCountyCode as $visitor) {
                 $curl = curl_init();
 
                 $optArray = [
-                    CURLOPT_URL => 'https://geoip.goodday.group/?ip=' . $visitor->ip,
+                    CURLOPT_URL => rtrim($geoIpEndpoint, '/') . '/?ip=' . urlencode((string) $visitor->ip),
                     CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_CONNECTTIMEOUT => 5,
+                    CURLOPT_CONNECTTIMEOUT => 3,
                 ];
 
                 curl_setopt_array($curl, $optArray);
@@ -34,13 +35,14 @@ class IndexController extends Controller
                     break;
                 }
 
-                $result = json_decode($result);
+                $result = json_decode((string) $result);
 
-                if ($result) {
+                if ($result && isset($result->countryCode)) {
                     $visitor->update(['country' => $result->countryCode]);
                 }
             }
         }
+
         return view('admincp.visitors.index')->with([
             'visitors' => $this->getAllVisitors(),
             'agent' => new Agent(),

@@ -36,7 +36,7 @@
                                 <input
                                     id="url"
                                     class="w-full px-3.5 py-2.5 text-sm text-slate-800 bg-white border border-slate-300 rounded focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all font-mono"
-                                    name="url" type="text" placeholder="https://www.atrie.lv/krediti"
+                                    name="url" type="text" placeholder="/piemers-adresei"
                                     value="{{ old('url') }}" required autofocus>
                             </div>
                         </div>

@@ -29,49 +29,55 @@ class SectionController extends Controller
      */
     public function index(Request $request, string $name)
     {
-        $loanType = LoanTypes::where('route_name', $name)->whereNull('parent_type_id')->where('lang', App::getLocale())->where('active', true)->first();
-        $section = Sections::where('route_name', $name)->where('lang', App::getLocale())->where('active', true)->where('type', '!=', 'home')->first();
-        $faqs = Faqs::where('lang', App::getLocale())->where('active', true)->get();
+        $locale = App::getLocale();
+        $loanType = LoanTypes::with('children')
+            ->where('route_name', $name)
+            ->whereNull('parent_type_id')
+            ->where('lang', $locale)
+            ->where('active', true)
+            ->first();
+
+        $section = Sections::where('route_name', $name)
+            ->where('lang', $locale)
+            ->where('active', true)
+            ->where('type', '!=', 'home')
+            ->first();
+
+        $faqs = Faqs::where('lang', $locale)->where('active', true)->orderBy('order')->get();
 
         if (!$loanType && !$section) {
             abort(404);
         }
 
-        $utm_campaign = $request->utm_campaign ? $request->utm_campaign : $request->cookie('utm_campaign');
-
-        $sorting = LendersSorting::where('campaign_name', $utm_campaign)->first();
-
-        if ($sorting) {
-            $sorting_epc = LendersSortingEpc::where('sorting_id', $sorting->id)->get();
-        } else {
-            $sorting_epc = [];
-        }
+        $utm_campaign = $request->utm_campaign ?: $request->cookie('utm_campaign');
+        $sorting = $utm_campaign ? LendersSorting::where('campaign_name', $utm_campaign)->first() : null;
+        $sorting_epc = $sorting ? LendersSortingEpc::where('sorting_id', $sorting->id)->get() : collect();
 
         $lenders = [];
         $lenders_array = [];
 
         if ($loanType) {
-            $bot = false;
-
-            if (stristr(request()->header('user-agent'), 'bot') || stristr(request()->header('user-agent'), 'crawler') || stristr(request()->header('user-agent'), 'Skype')) {
-                $bot = true;
-            }
-
+            $bot = is_bot();
             $visit = $this->createVisit($bot);
 
-            if ($utm_campaign && count($sorting_epc) !== 0) {
-                foreach ($sorting_epc as $sorting) {
-                    $lender = Lenders::where('id', $sorting->lender_id)->first();
+            if ($utm_campaign && $sorting_epc->isNotEmpty()) {
+                foreach ($sorting_epc as $sortItem) {
+                    $lender = Lenders::with(['data', 'reviews'])->where('id', $sortItem->lender_id)->first();
+                    if (!$lender) {
+                        continue;
+                    }
 
-                    $categories = LendersCategories::where('loan_type_id', $loanType->id)->where('lender_id', $lender->id)->exists();
+                    $inCategory = LendersCategories::where('loan_type_id', $loanType->id)
+                        ->where('lender_id', $lender->id)
+                        ->exists();
 
-                    if ($lender->active && $categories) {
+                    if ($lender->active && $inCategory) {
                         if ($lender->frequency) {
                             if (rand(1, $lender->frequency) == $lender->frequency) {
-                                $lenders[$sorting->position] = $lender;
+                                $lenders[$sortItem->position] = $lender;
                             }
                         } else {
-                            $lenders[$sorting->position] = $lender;
+                            $lenders[$sortItem->position] = $lender;
                         }
                     }
                 }
@@ -79,16 +85,14 @@ class SectionController extends Controller
                 $categories = LendersCategories::where('loan_type_id', $loanType->id)->get();
 
                 foreach ($categories as $category) {
-                    $lender = Lenders::where('id', $category->lender_id)->first();
-                    if ($lender) {
-                        if ($lender->position && $lender->active) {
-                            if ($lender->frequency) {
-                                if (rand(1, $lender->frequency) == $lender->frequency) {
-                                    $lenders[$lender->position] = $lender;
-                                }
-                            } else {
+                    $lender = Lenders::with(['data', 'reviews'])->where('id', $category->lender_id)->first();
+                    if ($lender && $lender->position && $lender->active) {
+                        if ($lender->frequency) {
+                            if (rand(1, $lender->frequency) == $lender->frequency) {
                                 $lenders[$lender->position] = $lender;
                             }
+                        } else {
+                            $lenders[$lender->position] = $lender;
                         }
                     }
                 }
@@ -99,42 +103,56 @@ class SectionController extends Controller
             }
 
             $i = 1;
-
             foreach ($lenders as $lender) {
                 $this->createVisitSorting($visit, $lender->id, $i, $bot);
-
                 $lenders_array[$i++] = $lender;
             }
         }
 
         if ($loanType) {
+            $siblingLoanTypes = LoanTypes::whereNull('parent_type_id')
+                ->where('lang', $locale)
+                ->where('active', true)
+                ->orderBy('order')
+                ->get();
+
             return view('loan-type')->with([
                 'loanType' => $loanType,
+                'parentLoanType' => null,
+                'siblingLoanTypes' => $siblingLoanTypes,
                 'lenders' => $lenders_array,
+                'faqs' => $faqs,
                 'reviews' => Reviews::whereNotNull('rating')->get(),
-                'reviewSection' =>  Sections::where('type', 'reviews')->where('lang', App::getLocale())->where('active', true)->first(),
+                'reviewSection' => Sections::where('type', 'reviews')->where('lang', $locale)->where('active', true)->first(),
             ]);
         } elseif ($section->type == 'contact') {
-            $loanTypes = LoanTypes::where('lang', App::getLocale())->where('active', true)->orderBy('order')->get();
+            $loanTypes = LoanTypes::where('lang', $locale)->whereNull('parent_type_id')->where('active', true)->orderBy('order')->get();
 
             return view('contact-us')->with([
-
                 'section' => $section,
                 'loanTypes' => $loanTypes,
                 'faqs' => $faqs,
             ]);
         } elseif ($section->type == 'reviews') {
-            $lenders = Lenders::orderBy('name', 'asc')->get();
-            $recentReviews = Reviews::with('lender')->latest()->take(10)->get();
+            $lendersList = Lenders::with(['data', 'reviews'])
+                ->where('active', true)
+                ->orderBy('position', 'asc')
+                ->get();
+
+            if ($lendersList->isEmpty()) {
+                $lendersList = Lenders::with(['data', 'reviews'])->orderBy('name', 'asc')->get();
+            }
+
+            $recentReviews = Reviews::with('lender')->latest()->take(12)->get();
 
             return view('reviews.index')->with([
-                'lenders' => $lenders,
+                'lenders' => $lendersList,
                 'recentReviews' => $recentReviews,
                 'section' => $section,
             ]);
         } elseif ($section->type == 'blog') {
             $blogPosts = Sections::where('parent_section_id', $section->id)
-                ->where('lang', App::getLocale())
+                ->where('lang', $locale)
                 ->where('type', 'blog')
                 ->where('active', true)
                 ->orderBy('order')
@@ -144,10 +162,6 @@ class SectionController extends Controller
                 'section' => $section,
                 'blogPosts' => $blogPosts,
             ]);
-            // } elseif ($section->type == 'unsubscribe') {
-            //     return view('unsubscribe')->with([
-            //         'section' => $section,
-            //     ]);
         } else {
             return view('footer-page')->with([
                 'section' => $section,
@@ -159,16 +173,9 @@ class SectionController extends Controller
     public function createVisit($bot): int
     {
         $visit = new Visits();
-
-        if (request()->cookie('visitor_id')) {
-            $visit->visitor_id = request()->cookie('visitor_id');
-        } else {
-            $visit->visitor_id = null;
-        }
-
+        $visit->visitor_id = request()->cookie('visitor_id') ?: null;
         $visit->utm_campaign = request()->cookie('utm_campaign');
         $visit->bot = $bot;
-
         $visit->save();
 
         return $visit->id;

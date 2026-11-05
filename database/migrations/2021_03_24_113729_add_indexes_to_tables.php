@@ -21,8 +21,9 @@ class AddIndexesToTables extends Migration
         // Iterate over the indexes array and see if the values are not
         // already in use, if not, add them
         foreach ($indexes as $index) {
-            if (!array_key_exists($index, $existing_indexes)) {
-                $table->index($index, $index);
+            $prefixedName = $table_name . '_' . $index . '_index';
+            if (!array_key_exists($index, $existing_indexes) && !array_key_exists($prefixedName, $existing_indexes)) {
+                $table->index($index, $prefixedName);
             }
         }
     }
@@ -94,69 +95,32 @@ class AddIndexesToTables extends Migration
      */
     public function down()
     {
-        Schema::table('clicks', function (Blueprint $table) {
-            // Array of indexes to remove
-            $indexes = ['visitor_id', 'lender_id', 'utm_campaign', 'created_at'];
-            // Iterate over the indexes to remove them
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
+        $tables = [
+            'clicks' => ['visitor_id', 'lender_id', 'utm_campaign', 'created_at'],
+            'commissions' => ['uid', 'commission', 'lender_id', 'status', 'utm_campaign', 'gclid', 'commission_date'],
+            'consumers' => ['email'],
+            'lenders' => ['name', 'position', 'active'],
+            'lenders__data' => ['lang', 'lender_id'],
+            'lenders__sorting_epc' => ['sorting_id', 'epc', 'clicks'],
+            'lenders__visits' => ['created_at'],
+            'lenders__visits_sorting' => ['lender_id', 'position', 'bot', 'created_at'],
+            'visitors' => ['ip', 'created_at', 'updated_at'],
+        ];
 
-        Schema::table('commissions', function (Blueprint $table) {
-            $indexes = ['uid', 'commission', 'lender_id', 'status', 'utm_campaign', 'gclid', 'commission_date'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
+        $sm = Schema::getConnection()->getDoctrineSchemaManager();
 
-        Schema::table('consumers', function (Blueprint $table) {
-            $indexes = ['email'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
-
-        Schema::table('lenders', function (Blueprint $table) {
-            $indexes = ['name', 'position', 'active'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
-
-        Schema::table('lenders__data', function (Blueprint $table) {
-            $indexes = ['lang', 'lender_id'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
-
-        Schema::table('lenders__sorting_epc', function (Blueprint $table) {
-            $indexes = ['sorting_id', 'epc', 'clicks'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
-
-        Schema::table('lenders__visits', function (Blueprint $table) {
-            $indexes = ['created_at'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
-
-        Schema::table('lenders__visits_sorting', function (Blueprint $table) {
-            $indexes = ['lender_id', 'position', 'bot', 'created_at'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
-
-        Schema::table('visitors', function (Blueprint $table) {
-            $indexes = ['ip', 'created_at', 'updated_at'];
-            foreach ($indexes as $index) {
-                $table->dropIndex($index);
-            }
-        });
+        foreach ($tables as $tableName => $indexes) {
+            $existing = $sm->listTableIndexes($tableName);
+            Schema::table($tableName, function (Blueprint $table) use ($tableName, $indexes, $existing) {
+                foreach ($indexes as $index) {
+                    $prefixedName = $tableName . '_' . $index . '_index';
+                    if (array_key_exists($prefixedName, $existing)) {
+                        $table->dropIndex($prefixedName);
+                    } elseif (array_key_exists($index, $existing)) {
+                        $table->dropIndex($index);
+                    }
+                }
+            });
+        }
     }
 }

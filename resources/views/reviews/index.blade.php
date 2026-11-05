@@ -1,127 +1,142 @@
 @extends('layouts.public')
 
-@section('title', $section->title ?: 'Ātro kredītu un patēriņu kredītu atsauksmes')
-@section('description', $section->description ?: 'Populārāko ātro kredītu atsauksmes. Izveidota sadaļa, lai palīdzētu pieņemt labāko risinājumu.')
-@section('keywords', $section->keywords)
+@section('title', clean_legacy_brand($section->title) ?: 'Aizdevēju atsauksmes un reitings Latvijā')
+@section('description', clean_legacy_brand($section->description) ?: 'Neatkarīgas klientu atsauksmes, vērtējumi un detalizēta informācija par Latvijas nebanku un banku kredītdevējiem.')
 
 @section('content')
-@php
-    $lvMonths = [
-        1 => 'janvārī', 2 => 'februārī', 3 => 'martā', 4 => 'aprīlī',
-        5 => 'maijā', 6 => 'jūnijā', 7 => 'jūlijā', 8 => 'augustā',
-        9 => 'septembrī', 10 => 'oktobrī', 11 => 'novembrī', 12 => 'decembrī'
-    ];
-    $currentMonth = $lvMonths[now()->month] ?? 'šomēnes';
+    <section class="border-b border-ink">
+        <div class="wrap py-8 sm:py-10">
+            <x-breadcrumbs />
 
-    $topLenders = \App\Models\Admincp\Lenders\Lenders::where('active', 1)
-        ->where('top_lender', 1)
-        ->orderBy('position', 'asc')
-        ->take(5)
-        ->get();
-
-    if ($topLenders->isEmpty()) {
-        $topLenders = \App\Models\Admincp\Lenders\Lenders::where('active', 1)
-            ->orderBy('position', 'asc')
-            ->take(5)
-            ->get();
-    }
-
-    $lendersList = \App\Models\Admincp\Lenders\Lenders::withCount('reviews')
-        ->orderBy('name', 'asc')
-        ->get();
-@endphp
-<div class="container" itemscope itemtype="https://schema.org/FinancialService">
-    <div class="row">
-        <div class="col-md-12">
-            <h1 class="h2" itemprop="name">{{ $section->h1 ?: 'Kredītu atsauksmes' }}</h1>
-            <ol class="breadcrumb">
-                <li itemscope itemtype="https://data-vocabulary.org/Breadcrumb"><a itemprop="url" href="/"><span itemprop="title">eirokrediti.lv</span></a></li>
-                <li itemscope itemtype="https://data-vocabulary.org/Breadcrumb"><a itemprop="url" href="/atsauksmes"><span itemprop="title">kredītu atsauksmes</span></a></li>
-            </ol>
+            <div class="max-w-3xl">
+                <span class="kicker mb-2">Aizdevēju katalogs un reitings</span>
+                <h1 class="font-serif text-3xl sm:text-5xl font-bold tracking-[-0.02em] text-ink">
+                    {{ clean_legacy_brand($section->h1 ?: 'Kredītdevēju atsauksmes un novērtējums') }}
+                </h1>
+                <p class="standfirst mt-3">
+                    Izpētiet reālu aizņēmēju pieredzi, salīdziniet aizdevēju darba laikus, procentu likmes (GPL), juridiskos rekvizītus un pievienojiet savu atsauksmi.
+                </p>
+            </div>
         </div>
-        <div class="clearfix"></div>
+    </section>
 
-        <div class="col-md-8 container-large">
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <p>Lai Jūs varētu pieņemt labāko risinājumu, izvēlēties Jums izdevīgāko aizdevēju kompāniju, esam izveidojuši sadaļu atsauksmes par aizdevējiem.</p>
-                    <h2 class="h4" style="margin-top:0;margin-bottom:20px;">Izvēlies attiecīgo aizdevēju</h2>
-                    <div class="row">
-                        @foreach ($lendersList as $lender)
-                            <div class="col-md-2 col-sm-3 col-xs-6" style="height:90px;">
-                                <a title="{{ $lender->name }} atsauksmes" href="/atsauksmes/{{ $lender->route_name }}">
-                                    <img class="img-responsive" alt="{{ $lender->name }}" src="{{ $lender->image }}">
-                                </a>
-                            </div>
-                        @endforeach
+    <div class="wrap py-8 sm:py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div class="lg:col-span-8 space-y-12" x-data="{ query: '' }">
+                {{-- Directory Search Header --}}
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-ink pb-4">
+                    <div>
+                        <h2 class="font-serif text-2xl font-semibold text-ink">Reģistrētie aizdevēji ({{ $lenders->count() }})</h2>
+                        <p class="meta mt-0.5">Atveriet aizdevēja kartīti, lai lasītu apskatu un klientu atsauksmes</p>
+                    </div>
+                    <div class="w-full sm:w-64">
+                        <input type="search"
+                               x-model="query"
+                               placeholder="Meklēt pēc nosaukuma..."
+                               aria-label="Meklēt aizdevēju"
+                               class="field py-2 text-xs">
                     </div>
                 </div>
-            </div>
 
-            <div class="panel panel-default">
-                <div class="panel-heading"><h2 class="panel-title">Pēdējās atsauksmes</h2></div>
-                <div class="panel-body loan-body">
-                    @if (isset($recentReviews) && $recentReviews->count() > 0)
-                        @foreach ($recentReviews as $rev)
-                            <div class="row small-reviews">
-                                <div class="col-md-2 col-xs-6">
-                                    <a href="/atsauksmes/{{ $rev->lender->route_name ?? '' }}">
-                                        <img class="img-responsive" alt="{{ $rev->lender->name ?? '' }}" src="{{ $rev->lender->image ?? '' }}">
-                                    </a>
-                                </div>
-                                <div class="col-md-10 col-xs-6 text-right">
-                                    @for ($i = 1; $i <= 5; $i++)
-                                        @if ($rev->rating >= $i)
-                                            <span class="glyphicon glyphicon-star"></span>
-                                        @else
-                                            <span class="glyphicon glyphicon-star-empty"></span>
+                {{-- Lender Directory Rows --}}
+                <div class="divide-y divide-rule border-b border-rule -mt-8">
+                    @foreach ($lenders as $idx => $lenderItem)
+                        @php
+                            $lRevCount = $lenderItem->reviews->whereNotNull('rating')->count();
+                            $lAvg = $lRevCount > 0
+                                ? number_format((float) $lenderItem->reviews->whereNotNull('rating')->avg('rating'), 1, ',', '')
+                                : null;
+                            $lSlug = $lenderItem->route_name ?: \Illuminate\Support\Str::slug($lenderItem->name);
+                            $lProfileUrl = route('section.deep', ['name' => $section->route_name, 'deep_name' => $lSlug]);
+                        @endphp
+                        <article
+                            x-show="query.trim() === '' || '{{ strtolower(addslashes($lenderItem->name)) }}'.includes(query.trim().toLowerCase())"
+                            class="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <a href="{{ $lProfileUrl }}"
+                                   class="w-24 h-12 bg-white border border-rule p-1.5 flex items-center justify-center shrink-0">
+                                    @if (!empty($lenderItem->image))
+                                        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                                             data-lazy-src="{{ $lenderItem->image }}"
+                                             alt="{{ $lenderItem->name }}"
+                                             loading="lazy" decoding="async" fetchpriority="low"
+                                             class="max-h-9 w-auto object-contain">
+                                    @else
+                                        <span class="font-serif text-sm font-semibold">{{ $lenderItem->name }}</span>
+                                    @endif
+                                </a>
+
+                                <div class="min-w-0">
+                                    <div class="flex items-baseline gap-3">
+                                        <h3 class="font-serif text-xl font-semibold text-ink">
+                                            <a href="{{ $lProfileUrl }}" class="hover:text-claret">{{ $lenderItem->name }}</a>
+                                        </h3>
+                                        @if ($lAvg)
+                                            <span class="text-xs font-semibold text-claret num">{{ $lAvg }}/5 ({{ $lRevCount }})</span>
                                         @endif
-                                    @endfor
-                                </div>
-                                <div class="col-md-12 col-xs-12">
-                                    <blockquote>{{ $rev->text }}</blockquote>
+                                    </div>
+                                    <div class="mt-1 text-xs text-ink-muted num">
+                                        Summa: <strong class="text-ink">{{ number_format((int) $lenderItem->min_amount, 0, ',', ' ') }}–{{ number_format((int) $lenderItem->max_amount, 0, ',', ' ') }} €</strong>
+                                        · Termiņš: <strong class="text-ink">{{ format_term_label($lenderItem->max_term, true) }}</strong>
+                                    </div>
                                 </div>
                             </div>
-                        @endforeach
-                    @endif
-                </div>
-            </div>
-        </div>
 
-        <div class="col-md-4 container-small">
-            <div class="panel panel-default">
-                <div class="panel-heading"><h2 class="panel-title">TOP 5 <a href="/atrie-krediti">ātrie kredīti</a> {{ $currentMonth }}</h2></div>
-                <div class="panel-body loan-body">
-                    @foreach ($topLenders as $top)
-                        <div class="row small-loans">
-                            <div class="col-md-4 col-sm-4 col-xs-4 logo">
-                                <a onclick="ga('send', 'event', 'Affiliate link', '{{ $top->route_name }}');" rel="nofollow" target="_blank" href="{{ $top->affiliate_link ?: ('/go/' . $top->route_name) }}">
-                                    <img class="img-responsive" alt="{{ $top->name }}" src="{{ $top->image }}">
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="{{ $lProfileUrl }}" class="btn-line btn-sm">
+                                    Atsauksmes ({{ $lRevCount }})
+                                </a>
+                                <a href="{{ route('go', ['lender_id' => $lenderItem->id, 'lender_position' => $idx + 1]) }}"
+                                   rel="nofollow sponsored noopener"
+                                   target="_blank"
+                                   class="btn-ink btn-sm">
+                                    Piedāvājums
                                 </a>
                             </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-center amount">līdz <span>{{ $top->max_amount }}&euro;</span></div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-right">
-                                <a onclick="ga('send', 'event', 'Affiliate link', '{{ $top->route_name }}');" rel="nofollow" target="_blank" style="width:100%;" class="get btn btn-sm btn-success" href="{{ $top->affiliate_link ?: ('/go/' . $top->route_name) }}">Saņemt</a>
-                            </div>
-                        </div>
+                        </article>
                     @endforeach
                 </div>
+
+                {{-- Latest Customer Reviews Feed --}}
+                @if (isset($recentReviews) && $recentReviews->isNotEmpty())
+                    <section>
+                        <div class="section-head">
+                            <div>
+                                <span class="kicker">Jaunākie ieraksti</span>
+                                <h2 class="section-title mt-1">Pēdējās pievienotās atsauksmes</h2>
+                            </div>
+                        </div>
+
+                        <div class="divide-y divide-rule border-y border-rule">
+                            @foreach ($recentReviews as $rev)
+                                @php
+                                    $revSlug = $rev->lender?->route_name ?: ($rev->lender ? \Illuminate\Support\Str::slug($rev->lender->name) : '');
+                                @endphp
+                                <article class="py-5">
+                                    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2 text-xs">
+                                        <div>
+                                            <span class="font-semibold text-ink">{{ $rev->name ?: 'Klients' }}</span>
+                                            @if ($rev->lender)
+                                                <span class="text-ink-faint mx-1.5">/</span>
+                                                <a href="{{ route('section.deep', ['name' => $section->route_name, 'deep_name' => $revSlug]) }}"
+                                                   class="link font-semibold">
+                                                    {{ $rev->lender->name }}
+                                                </a>
+                                            @endif
+                                        </div>
+                                        <span class="num font-semibold text-claret">Vērtējums: {{ $rev->rating }}/5</span>
+                                    </div>
+                                    <p class="font-serif text-base text-ink-soft leading-relaxed">{{ clean_legacy_brand($rev->text) }}</p>
+                                </article>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
             </div>
 
-            <div class="panel panel-default">
-                <div class="panel-heading"><h2 class="panel-title">Atsauksmes</h2></div>
-                <div class="panel-body loan-body">
-                    @foreach ($lendersList as $lender)
-                        <div class="row small-links">
-                            <div class="col-md-8 col-xs-6">
-                                <a href="/atsauksmes/{{ $lender->route_name }}">{{ $lender->name }}</a>
-                            </div>
-                            <div class="col-md-4 col-xs-6 text-right count">{{ $lender->reviews_count }}</div>
-                        </div>
-                    @endforeach
-                </div>
+            <div class="lg:col-span-4 lg:pl-8 lg:border-l lg:border-rule">
+                <x-right-sidebar />
             </div>
         </div>
     </div>
-</div>
 @endsection

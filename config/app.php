@@ -117,6 +117,8 @@ return [
      */
     'cron_minute' => env('CRON_MINUTE', 0),
 
+    'registration_enabled' => env('REGISTRATION_ROUTE', false),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers

@@ -4,14 +4,14 @@ namespace App\Models\Admincp\LoanTypes;
 
 use App\Models\Admincp\Faqs\FaqSections;
 use App\Models\Admincp\Lenders\Lenders;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LoanTypes extends Model
 {
     protected $guarded = [];
-
 
     public function scopeActive(Builder $query): Builder
     {
@@ -48,12 +48,14 @@ class LoanTypes extends Model
         return Lenders::whereIn('id', $this->categories()->pluck('lender_id'))->where('active', true)->max('max_amount');
     }
 
-
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_type_id');
+    }
 
     public function children()
     {
-        return $this->hasMany(self::class, 'parent_type_id')->where('active', true);
-        //  return self::where('active', true)->where('parent_type_id', $this->id)->get();
+        return $this->hasMany(self::class, 'parent_type_id')->where('active', true)->orderBy('order');
     }
 
     /**

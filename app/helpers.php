@@ -5,7 +5,6 @@ use App\Models\Admincp\LoanTypes\LoanTypes;
 use App\Models\Admincp\Sections\Sections;
 use App\Models\Admincp\Settings;
 use Illuminate\Support\Facades\Request;
-use App\Models\InternalLog;
 
 if (!function_exists('strip_phone_number_formatting')) {
     function strip_phone_number_formatting(string $phone_number, ?string $extension = ''): string
@@ -25,16 +24,11 @@ if (!function_exists('strip_phone_number_formatting')) {
 if (!function_exists('get_browser_name')) {
     function get_browser_name($user_agent): string
     {
-        // Make case-insensitive.
-        $t = strtolower($user_agent);
-        // If the string *starts* with the string, strpos returns 0 (i.e., FALSE). Do a ghetto hack and start with a space.
-        // "[strpos()] may return Boolean FALSE, but may also return a non-Boolean value which evaluates to FALSE."
-        //     http://php.net/manual/en/function.strpos.php
+        $t = strtolower((string) $user_agent);
         $t = ' ' . $t;
-        // Humans / Regular Users
         if (strpos($t, 'opera') || strpos($t, 'opr/')) {
             return 'Opera';
-        } elseif (strpos($t, 'edge') || strpos($t, 'Edg')) {
+        } elseif (strpos($t, 'edge') || strpos($t, 'edg')) {
             return 'Edge';
         } elseif (strpos($t, 'chrome')) {
             return 'Chrome';
@@ -44,8 +38,7 @@ if (!function_exists('get_browser_name')) {
             return 'Firefox';
         } elseif (strpos($t, 'msie') || strpos($t, 'trident/7')) {
             return 'Internet Explorer';
-        } // Search Engines
-        elseif (strpos($t, 'google')) {
+        } elseif (strpos($t, 'google')) {
             return '[Bot] Googlebot';
         } elseif (strpos($t, 'bing')) {
             return '[Bot] Bingbot';
@@ -63,8 +56,7 @@ if (!function_exists('get_browser_name')) {
             return '[Bot] Exabot';
         } elseif (strpos($t, 'msn')) {
             return '[Bot] MSN';
-        } // Common Tools and Bots
-        elseif (strpos($t, 'mj12bot')) {
+        } elseif (strpos($t, 'mj12bot')) {
             return '[Bot] Majestic';
         } elseif (strpos($t, 'ahrefs')) {
             return '[Bot] Ahrefs';
@@ -74,13 +66,11 @@ if (!function_exists('get_browser_name')) {
             return '[Bot] Moz or OpenSiteExplorer';
         } elseif (strpos($t, 'frog') || strpos($t, 'screaming')) {
             return '[Bot] Screaming Frog';
-        } // Miscellaneous
-        elseif (strpos($t, 'facebook')) {
+        } elseif (strpos($t, 'facebook')) {
             return '[Bot] Facebook';
         } elseif (strpos($t, 'pinterest')) {
             return '[Bot] Pinterest';
-        } // Check for strings commonly used in bot user agents
-        elseif (
+        } elseif (
             strpos($t, 'crawler') || strpos($t, 'api') ||
             strpos($t, 'spider') || strpos($t, 'http') ||
             strpos($t, 'bot') || strpos($t, 'archive') ||
@@ -123,7 +113,7 @@ if (!function_exists('get_os')) {
             '/webos/i' => 'Mobile',
         ];
         foreach ($os_array as $regex => $value) {
-            if (preg_match($regex, $user_agent)) {
+            if (preg_match($regex, (string) $user_agent)) {
                 $os_platform = $value;
             }
         }
@@ -138,12 +128,12 @@ if (!function_exists('check_device')) {
         if ($user_agent) {
             if (is_numeric(strpos(strtolower($user_agent), 'mobile'))) {
                 return is_numeric(strpos(strtolower($user_agent), 'tablet')) ? 'Tablet' : 'Phone';
-            } else {
-                return 'Desktop';
             }
-        } else {
-            return 'Unknown';
+
+            return 'Desktop';
         }
+
+        return 'Unknown';
     }
 }
 
@@ -168,10 +158,11 @@ if (!function_exists('get_consumer_user_agent_data')) {
 if (!function_exists('is_bot')) {
     function is_bot(): bool
     {
+        $ua = (string) request()->header('user-agent', '');
         if (
-            stristr(request()->header('user-agent'), 'bot') ||
-            stristr(request()->header('user-agent'), 'crawler') ||
-            stristr(request()->header('user-agent'), 'Skype')
+            stristr($ua, 'bot') ||
+            stristr($ua, 'crawler') ||
+            stristr($ua, 'Skype')
         ) {
             return true;
         }
@@ -179,40 +170,6 @@ if (!function_exists('is_bot')) {
         return false;
     }
 }
-
-// if (!function_exists('internal_log')) {
-//     function internal_log(
-//         string $provider,
-//         string $method,
-//         $email = null,
-//         $phone = null,
-//         $sender = null,
-//         $message = null,
-//         $request = null,
-//         $response = null
-//     ): ?InternalLog {
-//         if (config('app.internal_log_enabled') === true) {
-//             try {
-//                 $internal_log = new InternalLog();
-//                 $internal_log->provider = $provider;
-//                 $internal_log->env = app()->environment();
-//                 $internal_log->method = $method;
-//                 $internal_log->email = $email ?? '';
-//                 $internal_log->phone = $phone ?? '';
-//                 $internal_log->sender = $sender ?? '';
-//                 $internal_log->message = $message ?? '';
-//                 $internal_log->request = !empty($request) ? $request : null;
-//                 $internal_log->response = !empty($response) ? $response : null;
-//                 $internal_log->save();
-
-//                 return $internal_log;
-//             } catch (Throwable $e) {
-//             }
-//         }
-
-//         return null;
-//     }
-// }
 
 if (!function_exists('inactive_locales')) {
     function inactive_locales(): array
@@ -228,7 +185,7 @@ if (!function_exists('default_locale')) {
     {
         $available_locales = available_locales();
 
-        return $available_locales[0];
+        return $available_locales[0] ?? 'lv';
     }
 }
 
@@ -236,21 +193,25 @@ if (!function_exists('available_locales')) {
     function available_locales(): array
     {
         $available_locales = [];
-        $settings = Settings::query()
-            ->where('name', 'lang')
-            ->orderBy('value', 'DESC')
-            ->select('value')
-            ->get();
+        try {
+            $settings = Settings::query()
+                ->where('name', 'lang')
+                ->orderBy('value', 'DESC')
+                ->select('value')
+                ->get();
 
-        if ($settings->isNotEmpty()) {
-            foreach ($settings as $setting) {
-                if (!empty($setting->value)) {
-                    $available_locales[] = $setting->value;
+            if ($settings->isNotEmpty()) {
+                foreach ($settings as $setting) {
+                    if (!empty($setting->value)) {
+                        $available_locales[] = $setting->value;
+                    }
                 }
             }
+        } catch (\Throwable $e) {
+            return ['lv'];
         }
 
-        return $available_locales;
+        return !empty($available_locales) ? $available_locales : ['lv'];
     }
 }
 
@@ -349,53 +310,229 @@ if (!function_exists('flag_filename')) {
 }
 
 if (!function_exists('phone_extension')) {
-    /**
-     * Returns the prefix to be added before all phone numbers, depends on main country of the website
-     * Must start with a number, i.e. cannot start with "+"
-     *
-     * @return string
-     */
     function phone_extension(): string
     {
-        return Settings::retrieve('country_code');
+        try {
+            return Settings::retrieve('country_code') ?: '371';
+        } catch (\Throwable $e) {
+            return '371';
+        }
+    }
+}
+
+if (!function_exists('brand_setting')) {
+    /**
+     * Retrieve a setting value safely from database with fallback.
+     */
+    function brand_setting(string $key, ?string $default = null): ?string
+    {
+        try {
+            $val = Settings::retrieve($key);
+            if ($val !== '') {
+                return $val;
+            }
+        } catch (\Throwable $e) {
+            // Database may not be initialized yet
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('brand_name')) {
+    /**
+     * Centralized website brand name (changeable in AdminCP Settings or config/brand.php).
+     */
+    function brand_name(): string
+    {
+        $dbName = brand_setting('name');
+
+        if (!empty($dbName) && stripos($dbName, 'eirokrediti') === false) {
+            return trim($dbName);
+        }
+
+        $cfgName = (string) config('brand.name', 'Credito.lv');
+        if (stripos($cfgName, 'eirokrediti') !== false || strtolower($cfgName) === 'laravel') {
+            return 'Credito.lv';
+        }
+
+        return trim($cfgName);
+    }
+}
+
+if (!function_exists('brand_tagline')) {
+    function brand_tagline(): string
+    {
+        return brand_setting('brand_tagline', (string) config('brand.tagline', 'Neatkarīgs kredītu salīdzinājums')) ?: 'Neatkarīgs kredītu salīdzinājums';
+    }
+}
+
+if (!function_exists('brand_logo_url')) {
+    function brand_logo_url(): ?string
+    {
+        $logo = brand_setting('brand_logo', (string) config('brand.logo_url', ''));
+        $logo = trim((string) $logo);
+
+        return $logo !== '' ? $logo : null;
+    }
+}
+
+if (!function_exists('brand_email')) {
+    function brand_email(): string
+    {
+        $email = brand_setting('contact_email', (string) config('brand.email', 'info@credito.lv'));
+        if (empty($email) || stripos($email, 'eirokrediti') !== false || stripos($email, 'atrie.lv') !== false) {
+            return (string) config('brand.email', 'info@credito.lv');
+        }
+
+        return $email;
+    }
+}
+
+if (!function_exists('brand_disclaimer')) {
+    function brand_disclaimer(): string
+    {
+        return brand_setting('brand_disclaimer', (string) config('brand.disclaimer')) ?: (string) config('brand.disclaimer');
+    }
+}
+
+if (!function_exists('clean_legacy_brand')) {
+    /**
+     * Automatically replaces any legacy brand strings inside imported DB content or titles.
+     */
+    function clean_legacy_brand(?string $text): string
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        return preg_replace(
+            ['/\b(?:www\.)?eirokrediti\.lv\b/iu', '/\beirokrediti\b/iu', '/\b(?:www\.)?atrie\.lv\b/iu'],
+            [brand_name(), brand_name(), brand_name()],
+            $text
+        ) ?? $text;
+    }
+}
+
+if (!function_exists('seo_title')) {
+    /**
+     * Builds a clean, non-duplicated SEO <title> string with dynamic brand name.
+     */
+    function seo_title(?string $title = null): string
+    {
+        $brand = brand_name();
+        $clean = trim(clean_legacy_brand($title));
+
+        // Remove trailing separator if title already ended with "- Brand"
+        $clean = preg_replace('/\s*[\-\|–—]\s*' . preg_quote($brand, '/') . '\s*$/iu', '', $clean) ?? $clean;
+        $clean = trim($clean);
+
+        if ($clean === '' || mb_strtolower($clean) === mb_strtolower($brand)) {
+            return $brand . ' — ' . brand_tagline();
+        }
+
+        return $clean . ' | ' . $brand;
+    }
+}
+
+if (!function_exists('format_term_label')) {
+    /**
+     * Formats numeric day durations into clean Latvian/Russian human-readable terms.
+     */
+    function format_term_label($days, bool $withUpTo = false): string
+    {
+        $locale = app()->getLocale();
+        $prefix = $withUpTo ? ($locale === 'ru' ? 'до ' : 'līdz ') : '';
+
+        if (!is_numeric($days)) {
+            return trim($prefix . (string) $days);
+        }
+
+        $d = (int) $days;
+        if ($d <= 0) {
+            return $locale === 'ru' ? '1 мес.' : '1 mēn.';
+        }
+
+        if ($d < 30) {
+            if ($locale === 'ru') {
+                return $prefix . $d . ' дн.';
+            }
+            return $prefix . $d . ($withUpTo ? ' dienām' : ($d === 1 ? ' diena' : ' dienas'));
+        }
+
+        if ($d < 360) {
+            $months = max(1, (int) round($d / 30));
+            if ($locale === 'ru') {
+                return $prefix . $months . ' мес.';
+            }
+            if ($withUpTo) {
+                return $prefix . $months . ($months === 1 ? ' mēnesim' : ' mēnešiem');
+            }
+            return $months . ($months === 1 ? ' mēnesis' : ' mēneši');
+        }
+
+        $years = max(1, (int) round($d / 360));
+        if ($locale === 'ru') {
+            return $prefix . $years . ($years === 1 ? ' года' : ' лет');
+        }
+        if ($withUpTo) {
+            return $prefix . $years . ($years === 1 ? ' gadam' : ' gadiem');
+        }
+        return $years . ($years === 1 ? ' gads' : ' gadi');
     }
 }
 
 if (!function_exists('generate_breadcrumbs')) {
-    function generate_breadcrumbs()
+    /**
+     * Generates valid Schema.org BreadcrumbList items starting at root homepage.
+     */
+    function generate_breadcrumbs(): array
     {
         $segments = Request::segments();
-        $breadcrumbs = [];
+        $locale = app()->getLocale();
+        $homeLabel = $locale === 'ru' ? 'Главная' : 'Sākums';
+        $baseUrl = rtrim(url('/'), '/');
 
-        $url = url('/');
-
-        if (!empty($segments)) {
-            $url .= '/' . $segments[0];
-
-            $breadcrumbs[] = [
+        $breadcrumbs = [
+            [
                 '@type' => 'ListItem',
                 'position' => 1,
-                'name' => 'Sākums',
-                'item' => $url,
-            ];
+                'name' => $homeLabel,
+                'item' => $locale === 'ru' ? $baseUrl . '/ru' : $baseUrl . '/',
+            ],
+        ];
+
+        if (empty($segments)) {
+            return $breadcrumbs;
         }
 
+        $currentUrl = $baseUrl;
+
         foreach ($segments as $index => $segment) {
-            if ($index === 0) continue;
+            $currentUrl .= '/' . $segment;
 
-            $url .= '/' . $segment;
+            if ($index === 0 && in_array($segment, ['lv', 'ru'], true)) {
+                continue;
+            }
 
-            $title =
-            Sections::where('route_name', $segment)->value('name') ??
-            LoanTypes::where('route_name', $segment)->value('name') ??
-            Lenders::where('route_name', $segment)->value('name') ??
-            ucfirst(str_replace('-', ' ', $segment));
+            $title = null;
+            try {
+                $title = Sections::where('route_name', $segment)->where('lang', $locale)->value('name')
+                    ?? LoanTypes::where('route_name', $segment)->where('lang', $locale)->value('name')
+                    ?? Lenders::where('route_name', $segment)->value('name')
+                    ?? Sections::where('route_name', $segment)->value('name')
+                    ?? LoanTypes::where('route_name', $segment)->value('name');
+            } catch (\Throwable $e) {
+                $title = null;
+            }
+
+            $title = $title ? clean_legacy_brand($title) : ucfirst(str_replace('-', ' ', $segment));
 
             $breadcrumbs[] = [
                 '@type' => 'ListItem',
                 'position' => count($breadcrumbs) + 1,
                 'name' => $title,
-                'item' => $url,
+                'item' => $currentUrl,
             ];
         }
 

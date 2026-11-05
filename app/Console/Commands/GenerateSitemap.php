@@ -20,7 +20,7 @@ class GenerateSitemap extends Command
     protected $description = 'Generate the sitemap.';
 
     private string $targetScheme = 'https';
-    private string $targetHost = 'www.eirokrediti.lv';
+    private string $targetHost = 'localhost';
     private ?int $targetPort = null;
 
     public function handle()
@@ -33,10 +33,11 @@ class GenerateSitemap extends Command
         }
 
         $sitemapLink = $setting->value;
+        $fallbackHost = parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost';
 
         $parsed = parse_url($sitemapLink);
         $this->targetScheme = strtolower($parsed['scheme'] ?? 'https');
-        $this->targetHost = strtolower($parsed['host'] ?? 'www.eirokrediti.lv');
+        $this->targetHost = strtolower($parsed['host'] ?? $fallbackHost);
         $this->targetPort = isset($parsed['port']) ? (int) $parsed['port'] : null;
 
         $ignoredUrls = SitemapIgnoredUrl::where('active', true)
@@ -164,7 +165,6 @@ class GenerateSitemap extends Command
             return 1.0;
         }
 
-        // Galvenās kredītu / money lapas (visaugstākā komerciālā prioritāte)
         if (in_array($normalizedPath, [
             '/atrie-krediti',
             '/bezprocentu-krediti',
@@ -180,7 +180,6 @@ class GenerateSitemap extends Command
             return 0.9;
         }
 
-        // Kredītu apakšsadaļas (uz-12-menesiem, no-18-gadiem, ar-sliktu-kreditvesturi utt.)
         if (
             str_starts_with($normalizedPath, '/atrie-krediti/') ||
             str_starts_with($normalizedPath, '/paterina-krediti/') ||
@@ -190,7 +189,6 @@ class GenerateSitemap extends Command
             return 0.8;
         }
 
-        // Atsauksmju hub lapa
         if (
             $normalizedPath === '/atsauksmes' ||
             $normalizedPath === '/otzivi'
@@ -198,7 +196,6 @@ class GenerateSitemap extends Command
             return 0.8;
         }
 
-        // Individuālas aizdevēju atsauksmju lapas
         if (
             str_starts_with($normalizedPath, '/atsauksmes/') ||
             str_starts_with($normalizedPath, '/otzivi/')
@@ -206,7 +203,6 @@ class GenerateSitemap extends Command
             return 0.7;
         }
 
-        // Bloga saraksta lapa
         if (
             $normalizedPath === '/blogs' ||
             $normalizedPath === '/blog'
@@ -214,7 +210,6 @@ class GenerateSitemap extends Command
             return 0.7;
         }
 
-        // Bloga raksti
         if (
             str_starts_with($normalizedPath, '/blogs/') ||
             str_starts_with($normalizedPath, '/blog/')
@@ -222,7 +217,6 @@ class GenerateSitemap extends Command
             return 0.6;
         }
 
-        // Uzticības / informatīvās lapas
         if (in_array($normalizedPath, [
             '/par-mums',
             '/kontakti',
@@ -233,10 +227,10 @@ class GenerateSitemap extends Command
             return 0.5;
         }
 
-        // Juridiskās lapas
         if (in_array($normalizedPath, [
             '/privatuma-politika',
             '/politika-konfidentsialnosti',
+            '/lietosanas-noteikumi',
             '/lietosana',
             '/ispolzovanie',
             '/sikfaili',
@@ -256,7 +250,6 @@ class GenerateSitemap extends Command
             return Url::CHANGE_FREQUENCY_DAILY;
         }
 
-        // Galvenās kredītu sadaļas un to apakšsadaļas
         if (
             in_array($normalizedPath, [
                 '/atrie-krediti',
@@ -273,7 +266,6 @@ class GenerateSitemap extends Command
             return Url::CHANGE_FREQUENCY_WEEKLY;
         }
 
-        // Atsauksmju lapas
         if (
             str_starts_with($normalizedPath, '/atsauksmes') ||
             str_starts_with($normalizedPath, '/otzivi')
@@ -281,7 +273,6 @@ class GenerateSitemap extends Command
             return Url::CHANGE_FREQUENCY_WEEKLY;
         }
 
-        // Bloga saraksts
         if (
             $normalizedPath === '/blogs' ||
             $normalizedPath === '/blog'
@@ -289,7 +280,6 @@ class GenerateSitemap extends Command
             return Url::CHANGE_FREQUENCY_WEEKLY;
         }
 
-        // Bloga raksti
         if (
             str_starts_with($normalizedPath, '/blogs/') ||
             str_starts_with($normalizedPath, '/blog/')
@@ -297,10 +287,10 @@ class GenerateSitemap extends Command
             return Url::CHANGE_FREQUENCY_MONTHLY;
         }
 
-        // Juridiskās / statiskās lapas
         if (in_array($normalizedPath, [
             '/privatuma-politika',
             '/politika-konfidentsialnosti',
+            '/lietosanas-noteikumi',
             '/lietosana',
             '/ispolzovanie',
             '/sikfaili',
@@ -318,13 +308,11 @@ class GenerateSitemap extends Command
         $normalizedPath = $this->normalizePathWithoutLocale($path);
 
         try {
-            // Sākumlapa
             if ($normalizedPath === '/') {
                 $homepage = Sections::where('type', 'home')->first();
                 return $homepage?->updated_at ?? now();
             }
 
-            // Bloga raksts (/blogs/article-slug)
             if (preg_match('#^/(?:blogs|blog)/([^/]+)$#', $normalizedPath, $matches)) {
                 $blog = Sections::where('route_name', $matches[1])
                     ->where('type', 'blog')
@@ -334,7 +322,6 @@ class GenerateSitemap extends Command
                 }
             }
 
-            // Bloga saraksts (/blogs)
             if ($normalizedPath === '/blogs' || $normalizedPath === '/blog') {
                 $latestBlog = Sections::where('type', 'blog')
                     ->whereNotNull('parent_section_id')
@@ -345,7 +332,6 @@ class GenerateSitemap extends Command
                 }
             }
 
-            // Aizdevēja atsauksmes (/atsauksmes/lender-slug)
             if (preg_match('#^/(?:atsauksmes|otzivi)/([^/]+)$#', $normalizedPath, $matches)) {
                 $lender = Lenders::where('route_name', $matches[1])->first();
                 if ($lender && $lender->updated_at) {
@@ -353,7 +339,6 @@ class GenerateSitemap extends Command
                 }
             }
 
-            // Atsauksmju saraksts (/atsauksmes)
             if ($normalizedPath === '/atsauksmes' || $normalizedPath === '/otzivi') {
                 $latestReview = Reviews::orderBy('created_at', 'desc')->first();
                 if ($latestReview && $latestReview->created_at) {
@@ -361,7 +346,6 @@ class GenerateSitemap extends Command
                 }
             }
 
-            // Kredītu apakšsadaļa (/atrie-krediti/no-18-gadiem)
             if (preg_match('#^/[^/]+/([^/]+)$#', $normalizedPath, $matches)) {
                 $subLoan = LoanTypes::where('route_name', $matches[1])->first();
                 if ($subLoan && $subLoan->updated_at) {
@@ -369,7 +353,6 @@ class GenerateSitemap extends Command
                 }
             }
 
-            // Kredītu galvenā sadaļa vai vispārīga sadaļa
             if (preg_match('#^/([^/]+)$#', $normalizedPath, $matches)) {
                 $loan = LoanTypes::where('route_name', $matches[1])->first();
                 if ($loan && $loan->updated_at) {

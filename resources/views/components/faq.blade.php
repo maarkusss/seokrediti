@@ -1,74 +1,83 @@
-@props(['faqs' => $faqs, 'faqPage' => $faqPage])
+@props([
+    'faqs' => collect(),
+    'faqPage' => true,
+    'heading' => null,
+])
 
-<section>
-    <div class="max-w-6xl py-6 mx-auto">
+@php
+    $resolvedFaqs = collect();
+    foreach ($faqs as $item) {
+        if (isset($item->question)) {
+            $resolvedFaqs->push($item);
+        } elseif (isset($item->faq_id)) {
+            $found = \App\Models\Admincp\Faqs\Faqs::where('id', $item->faq_id)->where('active', true)->first();
+            if ($found) {
+                $resolvedFaqs->push($found);
+            }
+        }
+    }
+@endphp
 
-        @if ($faqPage == false)
-            <h2 class="mb-8 text-2xl font-semibold text-center text-gray-800">
-                @lang('Frequently Asked Questions')
-            </h2>
+@if ($resolvedFaqs->isNotEmpty())
+    <section aria-labelledby="faq-section-heading">
+        <div class="section-head">
+            <div>
+                <span class="kicker">Jautājumi un atbildes</span>
+                <h2 id="faq-section-heading" class="section-title mt-1">
+                    {{ $heading ?: __('Frequently Asked Questions') }}
+                </h2>
+            </div>
+        </div>
 
-            @foreach ($faqs as $faq)
-                @php
-                    $faq_details = App\Models\Admincp\Faqs\Faqs::find($faq->faq_id);
-                @endphp
-
-                <div x-data="{ open: false }" class="mb-3 overflow-hidden border border-gray-200 rounded-xl">
-                    <button @click="open = !open"
-                        class="flex items-center justify-between w-full px-5 py-4 text-left transition-colors duration-200 bg-gray-100 hover:bg-gray-200">
-                        <span class="pr-4 text-base font-medium leading-snug text-gray-900">
-                            {{ $faq_details->question }}
-                        </span>
-                        <svg :class="open ? 'rotate-180' : ''"
-                            class="flex-shrink-0 w-4 h-4 text-gray-500 transition-transform duration-200"
-                            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
+        <div class="divide-y divide-rule border-y border-rule">
+            @foreach ($resolvedFaqs as $idx => $faqItem)
+                <div x-data="{ open: {{ $idx === 0 ? 'true' : 'false' }} }">
+                    <button type="button"
+                            @click="open = !open"
+                            :aria-expanded="open.toString()"
+                            class="w-full flex items-baseline justify-between gap-6 py-4 text-left hover:text-claret transition-colors cursor-pointer">
+                        <h3 class="font-serif text-lg font-semibold text-ink leading-snug">
+                            <span class="font-sans text-xs font-semibold text-ink-faint num mr-2">{{ str_pad((string) ($idx + 1), 2, '0', STR_PAD_LEFT) }}.</span>
+                            {{ clean_legacy_brand($faqItem->question) }}
+                        </h3>
+                        <span class="font-mono text-base text-ink-muted shrink-0 select-none" x-text="open ? '−' : '+'">+</span>
                     </button>
-                    <div x-show="open" x-transition
-                        class="px-5 py-4 text-sm leading-relaxed text-gray-600 border-t border-gray-200 bg-gray-50">
-                        {!! $faq_details->answer !!}
+
+                    <div x-cloak
+                         x-show="open"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-1"
+                         class="pb-5 pl-7 pr-4">
+                        <div class="seo-prose no-dropcap text-base">
+                            {!! clean_legacy_brand($faqItem->answer) !!}
+                        </div>
                     </div>
                 </div>
             @endforeach
+        </div>
+    </section>
 
-        @else
-            <div itemscope itemtype="https://schema.org/FAQPage">
-                @foreach ($faqs as $faq)
-                    <div x-data="{ open: false }" itemscope itemprop="mainEntity"
-                        itemtype="https://schema.org/Question"
-                        class="mb-3 overflow-hidden border border-gray-200 rounded-xl">
-
-                        <button @click="open = !open"
-                            class="flex items-center justify-between w-full px-5 py-4 text-left transition-colors duration-200 bg-gray-100 hover:bg-gray-200">
-                            <h3 class="pr-4 text-base font-medium leading-snug text-gray-900" itemprop="name">
-                                {{ $faq->question }}
-                            </h3>
-                            <svg :class="open ? 'rotate-180' : ''"
-                                class="flex-shrink-0 w-4 h-4 text-gray-500 transition-transform duration-200"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-
-                        <div x-show="open" x-transition itemscope itemprop="acceptedAnswer"
-                            itemtype="https://schema.org/Answer"
-                            class="px-5 py-4 text-sm leading-relaxed text-gray-600 border-t border-gray-200 bg-gray-50">
-                            <div itemprop="text" class="prose max-w-none">
-                                {!! $faq->answer !!}
-                            </div>
-                            @if ($faq->topic)
-                                <p class="mt-3 text-sm text-gray-400">
-                                    {!! $faq->topic !!}
-                                </p>
-                            @endif
-                        </div>
-
-                    </div>
-                @endforeach
-            </div>
-
-        @endif
-
-    </div>
-</section>
+    @push('schema')
+        @php
+            $faqEntities = $resolvedFaqs->map(fn ($f) => [
+                '@type' => 'Question',
+                'name' => strip_tags(clean_legacy_brand($f->question)),
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => trim(strip_tags(clean_legacy_brand($f->answer))),
+                ],
+            ])->values()->all();
+        @endphp
+        <script type="application/ld+json">
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'FAQPage',
+                'mainEntity' => $faqEntities,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
+        </script>
+    @endpush
+@endif

@@ -56,7 +56,7 @@
                             </div>
                             <div>
                                 <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
-                                <input id="email" name="email" type="email" value="{{ $user->email }}" placeholder="email@eirokrediti.lv"
+                                <input id="email" name="email" type="email" value="{{ $user->email }}" placeholder="admin@example.com"
                                     class="w-full px-3.5 py-2.5 text-sm text-slate-800 bg-white border border-slate-300 rounded focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 shadow-xs transition-all">
                             </div>
                             <div>

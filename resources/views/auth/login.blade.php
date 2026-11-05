@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Login - ' . env('APP_NAME'))
+@section('title', 'Pieslēgties - ' . brand_name())
 
 @section('content')
     <div class="flex flex-col items-center justify-center w-full min-h-screen p-4 bg-slate-50">
@@ -13,12 +13,9 @@
             </div>
         @endif
         <div class="flex flex-col items-center justify-center w-full max-w-sm p-8 bg-white rounded-2xl shadow-sm border border-slate-200/80">
-            <div class="flex items-center gap-3 mb-6">
-                <img src="/images/logo-coin.png" class="w-8 h-8 object-contain shrink-0" alt="eirokrediti.lv">
-                <div class="flex flex-col">
-                    <span class="text-xl font-bold tracking-tight text-slate-900">eirokrediti.lv</span>
-                    <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Admin Panel</span>
-                </div>
+            <div class="flex flex-col items-center gap-1.5 mb-6">
+                <x-brand-logo size="md" />
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">Vadības panelis</span>
             </div>
 
             <form method="POST" action="{{ route('login') }}" class="w-full">
@@ -29,7 +26,7 @@
                     </label>
                     <input type="text" name="username" id="username" value="{{ old('username') }}" required autofocus
                         autocomplete="email"
-                        class="w-full px-3.5 py-2.5 text-slate-900 bg-white border border-slate-300 rounded-lg shadow-xs placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+                        class="w-full px-3.5 py-2.5 text-slate-900 bg-white border border-slate-300 rounded-lg shadow-xs placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
                         placeholder="admin">
                 </div>
                 <div class="mb-4">
@@ -37,23 +34,23 @@
                         {{ __('Parole') }}
                     </label>
                     <input type="password" name="password" id="password" required autocomplete="current-password"
-                        class="w-full px-3.5 py-2.5 text-slate-900 bg-white border border-slate-300 rounded-lg shadow-xs placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+                        class="w-full px-3.5 py-2.5 text-slate-900 bg-white border border-slate-300 rounded-lg shadow-xs placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 transition-all text-sm"
                         placeholder="••••••••">
                 </div>
                 <div class="flex items-center justify-between mb-6">
                     <label class="flex items-center text-sm font-medium text-slate-600 cursor-pointer select-none">
-                        <input type="checkbox" name="remember" id="remember" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-2 focus:ring-blue-500/20 mr-2"
+                        <input type="checkbox" name="remember" id="remember" class="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-2 focus:ring-emerald-500/20 mr-2"
                             {{ old('remember') ? 'checked' : '' }}>
                         {{ __('Atcerēties mani') }}
                     </label>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                        <a href="{{ route('password.request') }}" class="text-xs font-medium text-emerald-700 hover:text-emerald-800 hover:underline">
                             {{ __('Aizmirsi paroli?') }}
                         </a>
                     @endif
                 </div>
                 <button type="submit"
-                    class="w-full py-2.5 px-4 text-sm font-semibold text-center text-white bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all cursor-pointer">
+                    class="w-full py-2.5 px-4 text-sm font-semibold text-center text-white bg-emerald-600 rounded-lg shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all cursor-pointer">
                     {{ __('Pieslēgties') }}
                 </button>
             </form>

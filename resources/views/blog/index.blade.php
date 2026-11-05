@@ -1,185 +1,131 @@
 @extends('layouts.public')
 
-@section('title', $section->title ?: 'Blogs par kredītiem - eirokrediti.lv')
-@section('description', $section->description)
-@section('keywords', $section->keywords)
+@section('title', clean_legacy_brand($section->title) ?: 'Finanšu ceļveži un raksti par kredītiem')
+@section('description', clean_legacy_brand($section->description) ?: 'Praktiski padomi par patēriņa kredītiem, GPL aprēķināšanu, kredītu apvienošanu, auto līzingu un atbildīgu budžeta plānošanu.')
 
 @section('schema')
-    @if (count($blogPosts) > 0)
+    @if ($blogPosts->isNotEmpty())
+        @php
+            $blogSchemaPosts = $blogPosts->map(fn ($post) => [
+                '@type' => 'BlogPosting',
+                'headline' => clean_legacy_brand($post->name),
+                'image' => $post->image ? url($post->image) : null,
+                'datePublished' => \Carbon\Carbon::parse($post->created_at)->toIso8601String(),
+                'dateModified' => \Carbon\Carbon::parse($post->updated_at)->toIso8601String(),
+                'url' => route('section.deep', ['name' => $section->route_name, 'deep_name' => $post->route_name]),
+            ])->values()->all();
+        @endphp
         <script type="application/ld+json">
-            {
-                "@context": "https://schema.org",
-                "@type": "Blog",
-                "name": "{{ $section->title }}",
-                "description": "{{ $section->description }}",
-                "url": "{{ url()->current() }}",
-                "blogPost": [
-                    @foreach ($blogPosts as $blogPost)
-                    {
-                        "@type": "BlogPosting",
-                        "headline": "{{ $blogPost->name }}",
-                        "image": "{{ $blogPost->image }}",
-                        "datePublished": "{{ \Carbon\Carbon::parse($blogPost->created_at)->toIso8601String() }}",
-                        "url": "{{ route('section.deep', ['name' => $section->route_name, 'deep_name' => $blogPost->route_name]) }}"
-                    }@if (!$loop->last),@endif
-                    @endforeach
-                ]
-            }
+            {!! json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'Blog',
+                'name' => clean_legacy_brand($section->h1 ?: $section->name),
+                'description' => clean_legacy_brand($section->description),
+                'url' => url()->current(),
+                'publisher' => [
+                    '@type' => 'Organization',
+                    'name' => brand_name(),
+                ],
+                'blogPost' => $blogSchemaPosts,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
         </script>
     @endif
 @endsection
 
 @section('content')
-    <div class="container" itemscope itemtype="https://schema.org/FinancialService">
-        <div class="row">
-            <div class="col-md-12">
-                <h1 class="h2" itemprop="name">{{ $section->h1 ?: 'Blogs' }}</h1>
-                <ol class="breadcrumb">
-                    <li itemscope itemtype="https://data-vocabulary.org/Breadcrumb">
-                        <a itemprop="url" href="/"><span itemprop="title">eirokrediti.lv</span></a>
-                    </li>
-                    <li itemscope itemtype="http://data-vocabulary.org/Breadcrumb">
-                        <a itemprop="url" href="/blogs"><span itemprop="title">kredītu jaunumi</span></a>
-                    </li>
-                </ol>
-            </div>
-            <div class="clearfix"></div>
+    <section class="border-b border-ink">
+        <div class="wrap py-8 sm:py-10">
+            <x-breadcrumbs />
 
-            {{-- Main Column (840px desktop) --}}
-            <div class="col-md-8 container-large">
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        <div id="blogs">
-                            @foreach ($blogPosts as $blogPost)
-                                @php
-                                    $blogUrl = route('section.deep', ['name' => $section->route_name, 'deep_name' => $blogPost->route_name]);
-                                @endphp
-                                <div class="blog">
-                                    <h2 @if($loop->first) style="margin-top:0;" @endif>
-                                        <a href="{{ $blogUrl }}">{{ $blogPost->name }}</a>
+            <div class="max-w-3xl">
+                <span class="kicker mb-2">Finanšu pratība un analītika</span>
+                <h1 class="font-serif text-3xl sm:text-5xl font-bold tracking-[-0.02em] text-ink">
+                    {{ clean_legacy_brand($section->h1 ?: 'Finanšu ceļveži un kredītu jaunumi') }}
+                </h1>
+                <p class="standfirst mt-3">
+                    {{ clean_legacy_brand($section->description) ?: 'Skaidri un praktiski ceļveži par procentu likmēm (GPL), aizdevumu apvienošanu, auto finansēšanu un atbildīgu aizņemšanos.' }}
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div class="wrap py-8 sm:py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+            <div class="lg:col-span-8">
+                @if ($blogPosts->isNotEmpty())
+                    <div class="divide-y divide-rule">
+                        @foreach ($blogPosts as $idx => $post)
+                            @php
+                                $postUrl = route('section.deep', ['name' => $section->route_name, 'deep_name' => $post->route_name]);
+                                $excerpt = clean_legacy_brand(
+                                    $post->description ?: strip_tags($post->source ?: \Illuminate\Support\Str::limit(strip_tags($post->text), 200))
+                                );
+                                $readMinutes = max(2, (int) ceil(str_word_count(strip_tags((string) $post->text)) / 180));
+                            @endphp
+                            <article class="{{ $idx === 0 ? 'pb-8' : 'py-8' }}">
+                                @if ($idx === 0)
+                                    {{-- Lead Story --}}
+                                    @if (!empty($post->image))
+                                        <a href="{{ $postUrl }}" class="block aspect-[16/9] overflow-hidden border border-rule mb-5 bg-paper-dark">
+                                            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                                                 data-lazy-src="{{ $post->image }}"
+                                                 alt="{{ clean_legacy_brand($post->name) }}"
+                                                 loading="lazy" decoding="async"
+                                                 class="w-full h-full object-cover">
+                                        </a>
+                                    @endif
+                                    <div class="meta uppercase tracking-wider mb-2">
+                                        Galvenais raksts · {{ $readMinutes }} min lasījums · {{ \Carbon\Carbon::parse($post->updated_at ?: $post->created_at)->format('d.m.Y') }}
+                                    </div>
+                                    <h2 class="font-serif text-2xl sm:text-4xl font-bold text-ink leading-tight">
+                                        <a href="{{ $postUrl }}" class="hover:text-claret">{{ clean_legacy_brand($post->name) }}</a>
                                     </h2>
-                                    <div class="row">
-                                        @if ($blogPost->image)
-                                            <div class="col-md-12">
-                                                <div class="thumbnails">
-                                                    <a href="{{ $blogUrl }}">
-                                                        <img class="img-responsive" src="{{ $blogPost->image }}" alt="{{ $blogPost->name }}"/>
-                                                        <span></span>
-                                                    </a>
-                                                </div>
-                                            </div>
+                                    <p class="font-serif text-lg text-ink-soft mt-3 leading-relaxed">
+                                        {{ $excerpt }}
+                                    </p>
+                                    <div class="mt-4">
+                                        <a href="{{ $postUrl }}" class="link-more text-xs">Lasīt pilnu rakstu →</a>
+                                    </div>
+                                @else
+                                    {{-- Standard Editorial Row --}}
+                                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-5 items-start">
+                                        @if (!empty($post->image))
+                                            <a href="{{ $postUrl }}" class="sm:col-span-4 aspect-[16/10] overflow-hidden border border-rule bg-paper-dark block">
+                                                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                                                     data-lazy-src="{{ $post->image }}"
+                                                     alt="{{ clean_legacy_brand($post->name) }}"
+                                                     loading="lazy" decoding="async" fetchpriority="low"
+                                                     class="w-full h-full object-cover">
+                                            </a>
                                         @endif
-                                        <div class="col-md-12">
-                                            {!! $blogPost->source ?: '<p>' . strip_tags($blogPost->text) . '</p>' !!}
-                                            <p>
-                                                <a class="btn btn-sm btn-primary" href="{{ $blogUrl }}" role="button">Skatīt vairāk</a>
+                                        <div class="{{ !empty($post->image) ? 'sm:col-span-8' : 'sm:col-span-12' }}">
+                                            <div class="meta uppercase tracking-wider mb-1.5">
+                                                Ceļvedis · {{ $readMinutes }} min · {{ \Carbon\Carbon::parse($post->updated_at ?: $post->created_at)->format('d.m.Y') }}
+                                            </div>
+                                            <h2 class="font-serif text-xl sm:text-2xl font-semibold text-ink leading-snug">
+                                                <a href="{{ $postUrl }}" class="hover:text-claret">{{ clean_legacy_brand($post->name) }}</a>
+                                            </h2>
+                                            <p class="text-sm text-ink-soft mt-2 leading-relaxed">
+                                                {{ $excerpt }}
                                             </p>
+                                            <div class="mt-3">
+                                                <a href="{{ $postUrl }}" class="link-more text-xs">Lasīt rakstu →</a>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                @if (!$loop->last)
-                                    <div class="clearfix"></div>
                                 @endif
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Right Sidebar (330px desktop) --}}
-            <div class="col-md-4 container-small">
-                {{-- Panel 1: TOP 5 ātrie kredīti --}}
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h2 class="panel-title">TOP 5 <a href="/atrie-krediti">ātrie kredīti</a> {{ __(date('m').'date') }}</h2>
-                    </div>
-                    <div class="panel-body loan-body">
-                        <div class="row small-loans">
-                            <div class="col-md-4 col-sm-4 col-xs-4 logo">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'sosocredit');" rel="nofollow" target="_blank" href="/go/sosocredit">
-                                    <img class="img-responsive" alt="Sosocredit" src="/images/other/20242407112054_5143.jpg">
-                                </a>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-center amount">
-                                līdz <span>25000&euro;</span>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-right">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'sosocredit');" rel="nofollow" target="_blank" style="width:100%;" class="get btn btn-sm btn-success" href="/go/sosocredit">Saņemt</a>
-                            </div>
-                        </div>
-                        <div class="row small-loans">
-                            <div class="col-md-4 col-sm-4 col-xs-4 logo">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'kreditstar');" rel="nofollow" target="_blank" href="/go/kreditstar">
-                                    <img class="img-responsive" alt="Kreditstar" src="/images/other/kreditstar.jpg">
-                                </a>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-center amount">
-                                līdz <span>25000&euro;</span>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-right">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'kreditstar');" rel="nofollow" target="_blank" style="width:100%;" class="get btn btn-sm btn-success" href="/go/kreditstar">Saņemt</a>
-                            </div>
-                        </div>
-                        <div class="row small-loans">
-                            <div class="col-md-4 col-sm-4 col-xs-4 logo">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'viasms');" rel="nofollow" target="_blank" href="/go/viasms">
-                                    <img class="img-responsive" alt="Viasms" src="/images/other/viasms-lv-kv.jpg">
-                                </a>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-center amount">
-                                līdz <span>5000&euro;</span>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-right">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'viasms');" rel="nofollow" target="_blank" style="width:100%;" class="get btn btn-sm btn-success" href="/go/viasms">Saņemt</a>
-                            </div>
-                        </div>
-                        <div class="row small-loans">
-                            <div class="col-md-4 col-sm-4 col-xs-4 logo">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'soscredit');" rel="nofollow" target="_blank" href="/go/soscredit">
-                                    <img class="img-responsive" alt="Soscredit" src="/images/other/sosocredit.jpg">
-                                </a>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-center amount">
-                                līdz <span>25000&euro;</span>
-                            </div>
-                            <div class="col-md-4 col-sm-4 col-xs-4 text-right">
-                                <a onclick="ga('send', 'event', 'Affiliate link', 'soscredit');" rel="nofollow" target="_blank" style="width:100%;" class="get btn btn-sm btn-success" href="/go/soscredit">Saņemt</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Panel 2: Facebook Counter --}}
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        <div class="row">
-                            <div class="col-md-12" style="background:url(/images/other/palidzejusi.jpg) no-repeat left center;padding-left:130px;min-height:85px;">
-                                <p>Tavs palīgs kredītu salīdzināšanā.<br/>Mūsu pakalpojumus izmantojuši <strong>844599</strong> reizes.</p>
-                                <div style="margin-top: 8px;">
-                                    <iframe title="Facebook Page Like" src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Feirokrediti&width=90&layout=button_count&action=like&size=small&share=false&height=21&appId" width="90" height="21" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Panel 3: TOP jaunumi --}}
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h2 class="panel-title">TOP jaunumi</h2>
-                    </div>
-                    <div class="panel-body loan-body">
-                        @foreach ($blogPosts as $post)
-                            <div class="row small-links">
-                                <div class="col-md-12">
-                                    <a href="{{ route('section.deep', ['name' => $section->route_name, 'deep_name' => $post->route_name]) }}">
-                                        {{ $post->name }}
-                                    </a>
-                                </div>
-                            </div>
+                            </article>
                         @endforeach
                     </div>
-                </div>
+                @else
+                    <div class="boxed p-8 text-center text-ink-muted">
+                        Šobrīd jauni finanšu ceļveži tiek sagatavoti.
+                    </div>
+                @endif
+            </div>
+
+            <div class="lg:col-span-4 lg:pl-8 lg:border-l lg:border-rule">
+                <x-right-sidebar />
             </div>
         </div>
     </div>

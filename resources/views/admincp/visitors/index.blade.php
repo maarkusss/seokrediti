@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Visitors - ' . env('APP_NAME'))
+@section('title', 'Visitors - ' . brand_name())
 
 @section('content')
     <div class="flex flex-col w-full min-h-screen pt-16 bg-slate-50 lg:pl-56">
@@ -104,9 +104,7 @@
                                         <td class="px-4 py-3 text-center whitespace-nowrap">
                                             @if ($visitor->country && $visitor->country !== 'ZZ')
                                                 <div class="inline-flex items-center gap-1.5 cursor-pointer" onclick="prompt('IP Address','{{ $visitor->ip }}');return false;" title="IP: {{ $visitor->ip }}">
-                                                    <img width="18" height="13" class="rounded-xs shadow-2xs inline-block"
-                                                        src="https://dev.goodday.group/flags/4x3/{{ strtolower($visitor->country) }}.svg" alt="{{ $visitor->country }}">
-                                                    <span class="text-xs font-mono text-slate-600">{{ $visitor->country }}</span>
+                                                    <span class="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-xs font-mono font-semibold text-slate-700">{{ strtoupper($visitor->country) }}</span>
                                                 </div>
                                             @else
                                                 <span class="text-xs font-mono text-slate-400 cursor-pointer" onclick="prompt('IP Address','{{ $visitor->ip }}');return false;" title="IP: {{ $visitor->ip }}">

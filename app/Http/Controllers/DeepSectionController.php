@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admincp\Faqs\Faqs;
 use App\Models\Admincp\Lenders\Lenders;
 use App\Models\Admincp\Lenders\LendersCategories;
 use App\Models\Admincp\Lenders\LendersSorting;
@@ -21,6 +22,7 @@ class DeepSectionController extends Controller
     /**
      * Return a deep section.
      *
+     * @param Request $request
      * @param string $name
      * @param string $deep_name
      * @return View
@@ -28,22 +30,24 @@ class DeepSectionController extends Controller
      */
     public function index(Request $request, string $name, string $deep_name)
     {
+        $locale = App::getLocale();
+
         // 1. Check if first parameter is a Section (e.g. 'par-mums', 'blogs', 'atsauksmes')
         $section = Sections::where('route_name', $name)
-            ->where('lang', App::getLocale())
+            ->where('lang', $locale)
             ->where('active', true)
             ->where('type', '!=', 'home')
             ->first();
 
         if ($section) {
             // Standalone/standard sections (e.g. 'par-mums') have no sub-pages -> strictly 404
-            if ($section->type === 'standard') {
+            if ($section->type === 'standard' || $section->type === 'contact') {
                 abort(404);
             }
 
             // Reviews section (e.g. 'atsauksmes') -> only lender reviews allowed
             if ($section->type === 'reviews') {
-                $lender = Lenders::where('route_name', $deep_name)->first();
+                $lender = Lenders::with('data')->where('route_name', $deep_name)->first();
                 if (!$lender) {
                     abort(404);
                 }
@@ -51,23 +55,31 @@ class DeepSectionController extends Controller
                 $reviews = Reviews::where('lender_id', $lender->id)->orderByDesc('created_at')->get();
                 $ratings = 0;
                 $average_rating = '0.00';
+                $ratingBreakdown = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+
                 if ($reviews->count() > 0) {
                     foreach ($reviews as $review) {
+                        $r = max(1, min(5, (int) round((float) $review->rating)));
+                        $ratingBreakdown[$r]++;
                         $ratings += $review->rating;
                     }
                     $average_rating = number_format(($ratings / $reviews->count()), 2);
                 }
 
+                $otherLenders = Lenders::with(['data', 'reviews'])
+                    ->where('active', true)
+                    ->where('id', '!=', $lender->id)
+                    ->orderBy('position')
+                    ->take(6)
+                    ->get();
+
                 return view('reviews.show')->with([
                     'lender' => $lender,
-                    'lenders' => Lenders::query()
-                        ->whereHas('data', function ($query) {
-                            $query->where('lang', App::getLocale());
-                        })
-                        ->get(),
+                    'lenders' => $otherLenders,
                     'section' => $section,
                     'reviews' => $reviews,
                     'average_rating' => $average_rating,
+                    'ratingBreakdown' => $ratingBreakdown,
                 ]);
             }
 
@@ -75,7 +87,7 @@ class DeepSectionController extends Controller
             if ($section->type === 'blog') {
                 $deepSection = Sections::where('parent_section_id', $section->id)
                     ->where('route_name', $deep_name)
-                    ->where('lang', App::getLocale())
+                    ->where('lang', $locale)
                     ->where('active', true)
                     ->first();
 
@@ -83,9 +95,18 @@ class DeepSectionController extends Controller
                     abort(404);
                 }
 
+                $relatedPosts = Sections::where('parent_section_id', $section->id)
+                    ->where('id', '!=', $deepSection->id)
+                    ->where('lang', $locale)
+                    ->where('active', true)
+                    ->orderBy('order')
+                    ->take(3)
+                    ->get();
+
                 return view('blog.blog')->with([
                     'blogPost' => $deepSection,
                     'blogPostParent' => $section,
+                    'relatedPosts' => $relatedPosts,
                 ]);
             }
 
@@ -93,9 +114,10 @@ class DeepSectionController extends Controller
         }
 
         // 2. Check if first parameter is a parent Loan Type (e.g. 'atrie-krediti', 'paterina-krediti')
-        $parentLoanType = LoanTypes::whereNull('parent_type_id')
+        $parentLoanType = LoanTypes::with('children')
+            ->whereNull('parent_type_id')
             ->where('route_name', $name)
-            ->where('lang', App::getLocale())
+            ->where('lang', $locale)
             ->where('active', true)
             ->first();
 
@@ -103,9 +125,10 @@ class DeepSectionController extends Controller
             abort(404);
         }
 
-        $loanType = LoanTypes::where('parent_type_id', $parentLoanType->id)
+        $loanType = LoanTypes::with('parent')
+            ->where('parent_type_id', $parentLoanType->id)
             ->where('route_name', $deep_name)
-            ->where('lang', App::getLocale())
+            ->where('lang', $locale)
             ->where('active', true)
             ->first();
 
@@ -113,40 +136,35 @@ class DeepSectionController extends Controller
             abort(404);
         }
 
-        $utm_campaign = $request->utm_campaign ? $request->utm_campaign : $request->cookie('utm_campaign');
-
-        $sorting = LendersSorting::where('campaign_name', $utm_campaign)->first();
-
-        if ($sorting) {
-            $sorting_epc = LendersSortingEpc::where('sorting_id', $sorting->id)->get();
-        } else {
-            $sorting_epc = [];
-        }
+        $utm_campaign = $request->utm_campaign ?: $request->cookie('utm_campaign');
+        $sorting = $utm_campaign ? LendersSorting::where('campaign_name', $utm_campaign)->first() : null;
+        $sorting_epc = $sorting ? LendersSortingEpc::where('sorting_id', $sorting->id)->get() : collect();
 
         $lenders = [];
         $lenders_array = [];
 
         if ($loanType) {
-            $bot = false;
-
-            if (stristr(request()->header('user-agent'), 'bot') || stristr(request()->header('user-agent'), 'crawler') || stristr(request()->header('user-agent'), 'Skype')) {
-                $bot = true;
-            }
-
+            $bot = is_bot();
             $visit = $this->createVisit($bot);
 
-            if ($utm_campaign && count($sorting_epc) !== 0) {
-                foreach ($sorting_epc as $sorting) {
-                    $lender = Lenders::where('id', $sorting->lender_id)->first();
-                    $categories = LendersCategories::where('loan_type_id', $loanType->id)->where('lender_id', $lender->id)->exists();
+            if ($utm_campaign && $sorting_epc->isNotEmpty()) {
+                foreach ($sorting_epc as $sortItem) {
+                    $lender = Lenders::with(['data', 'reviews'])->where('id', $sortItem->lender_id)->first();
+                    if (!$lender) {
+                        continue;
+                    }
 
-                    if ($lender->active && $categories) {
+                    $inCategory = LendersCategories::where('loan_type_id', $loanType->id)
+                        ->where('lender_id', $lender->id)
+                        ->exists();
+
+                    if ($lender->active && $inCategory) {
                         if ($lender->frequency) {
                             if (rand(1, $lender->frequency) == $lender->frequency) {
-                                $lenders[$sorting->position] = $lender;
+                                $lenders[$sortItem->position] = $lender;
                             }
                         } else {
-                            $lenders[$sorting->position] = $lender;
+                            $lenders[$sortItem->position] = $lender;
                         }
                     }
                 }
@@ -154,16 +172,14 @@ class DeepSectionController extends Controller
                 $categories = LendersCategories::where('loan_type_id', $loanType->id)->get();
 
                 foreach ($categories as $category) {
-                    $lender = Lenders::where('id', $category->lender_id)->first();
-                    if ($lender) {
-                        if ($lender->position && $lender->active) {
-                            if ($lender->frequency) {
-                                if (rand(1, $lender->frequency) == $lender->frequency) {
-                                    $lenders[$lender->position] = $lender;
-                                }
-                            } else {
+                    $lender = Lenders::with(['data', 'reviews'])->where('id', $category->lender_id)->first();
+                    if ($lender && $lender->position && $lender->active) {
+                        if ($lender->frequency) {
+                            if (rand(1, $lender->frequency) == $lender->frequency) {
                                 $lenders[$lender->position] = $lender;
                             }
+                        } else {
+                            $lenders[$lender->position] = $lender;
                         }
                     }
                 }
@@ -174,35 +190,36 @@ class DeepSectionController extends Controller
             }
 
             $i = 1;
-
             foreach ($lenders as $lender) {
                 $this->createVisitSorting($visit, $lender->id, $i, $bot);
-
                 $lenders_array[$i++] = $lender;
             }
         }
 
+        $faqs = Faqs::where('lang', $locale)->where('active', true)->orderBy('order')->get();
+        $siblingLoanTypes = LoanTypes::whereNull('parent_type_id')
+            ->where('lang', $locale)
+            ->where('active', true)
+            ->orderBy('order')
+            ->get();
+
         return view('loan-type')->with([
             'loanType' => $loanType,
+            'parentLoanType' => $parentLoanType,
+            'siblingLoanTypes' => $siblingLoanTypes,
             'lenders' => $lenders_array,
+            'faqs' => $faqs,
             'reviews' => Reviews::whereNotNull('rating')->get(),
-            'reviewSection' => Sections::where('type', 'reviews')->where('lang', App::getLocale())->where('active', true)->first(),
+            'reviewSection' => Sections::where('type', 'reviews')->where('lang', $locale)->where('active', true)->first(),
         ]);
     }
 
     public function createVisit($bot): int
     {
         $visit = new Visits();
-
-        if (request()->cookie('visitor_id')) {
-            $visit->visitor_id = request()->cookie('visitor_id');
-        } else {
-            $visit->visitor_id = null;
-        }
-
+        $visit->visitor_id = request()->cookie('visitor_id') ?: null;
         $visit->utm_campaign = request()->cookie('utm_campaign');
         $visit->bot = $bot;
-
         $visit->save();
 
         return $visit->id;

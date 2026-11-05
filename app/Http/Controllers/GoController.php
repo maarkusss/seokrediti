@@ -7,7 +7,7 @@ use App\Models\Admincp\Settings;
 use App\Models\Clicks;
 use App\Models\Visitors\Visitors;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Illuminate\Support\Str;
 
 class GoController extends Controller
 {
@@ -17,7 +17,7 @@ class GoController extends Controller
      * @param Request $request
      * @param string $lender_id
      * @param string $position
-     * @return View
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function index(Request $request, string $lender_id, string $position)
     {
@@ -30,7 +30,7 @@ class GoController extends Controller
      *
      * @param Request $request
      * @param string $lender_slug
-     * @return View|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function bySlug(Request $request, string $lender_slug)
     {
@@ -48,52 +48,30 @@ class GoController extends Controller
     {
         $visitor = Visitors::where('id', $request->cookie('visitor_id'))->first();
 
-        // If affiliate_link starts with external protocol http:// or https://, redirect to it;
-        // if affiliate_link is another relative /go/ link or empty, prevent infinite redirect loop
         $isExternalAffiliate = !empty($lender->affiliate_link) && preg_match('#^https?://#i', $lender->affiliate_link);
 
         if ($this->isBot($request->header('user-agent'))) {
             if ($isExternalAffiliate) {
-                return redirect($lender->affiliate_link);
+                return redirect($lender->affiliate_link)->header('X-Robots-Tag', 'noindex, nofollow');
             }
-            return redirect('/');
+            return redirect('/')->header('X-Robots-Tag', 'noindex, nofollow');
         }
 
-        $utm_source = $request->cookie('utm_source');
-        $utm_medium = $request->cookie('utm_medium');
-        $utm_campaign = $request->cookie('utm_campaign');
-        $utm_content = $request->cookie('utm_content');
-        $gclid = $request->cookie('gclid');
-
-        if ($request->utm_source) {
-            $utm_source = $request->utm_source;
-        }
-
-        if ($request->utm_medium) {
-            $utm_medium = $request->utm_medium;
-        }
-
-        if ($request->utm_campaign) {
-            $utm_campaign = $request->utm_campaign;
-        }
-
-        if ($request->utm_content) {
-            $utm_content = $request->utm_content;
-        }
-
-        if ($request->gclid) {
-            $gclid = $request->gclid;
-        }
+        $utm_source = $request->utm_source ?: $request->cookie('utm_source');
+        $utm_medium = $request->utm_medium ?: $request->cookie('utm_medium');
+        $utm_campaign = $request->utm_campaign ?: $request->cookie('utm_campaign');
+        $utm_content = $request->utm_content ?: $request->cookie('utm_content');
+        $gclid = $request->gclid ?: $request->cookie('gclid');
 
         Clicks::create([
             'visitor_id' => $request->cookie('visitor_id'),
             'lender_id' => $lender->id,
             'referer' => $request->header('referer'),
-            'utm_source' => $request->cookie('utm_source'),
-            'utm_medium' => $request->cookie('utm_medium'),
-            'utm_campaign' => $request->cookie('utm_campaign'),
-            'utm_content' => $request->cookie('utm_content'),
-            'gclid' => $request->cookie('gclid'),
+            'utm_source' => $utm_source,
+            'utm_medium' => $utm_medium,
+            'utm_campaign' => $utm_campaign,
+            'utm_content' => $utm_content,
+            'gclid' => $gclid,
             'ip' => $request->ip(),
             'user_agent' => $request->header('user-agent'),
         ]);
@@ -105,31 +83,34 @@ class GoController extends Controller
         $lender->increment('clicks');
         $prefix = Settings::where('name', 'prefix')->first();
 
-        $prefixValue = $prefix ? $prefix->value : 'eiro';
+        $fallbackPrefix = Str::slug(brand_name(), '') ?: 'portal';
+        $prefixValue = ($prefix && !empty($prefix->value) && stripos($prefix->value, 'eiro') === false)
+            ? $prefix->value
+            : $fallbackPrefix;
 
-        // Build target affiliate redirect URL
         $targetLink = $lender->affiliate_link ?: '';
         if (empty($targetLink) || !preg_match('#^https?://#i', $targetLink)) {
-            // Default fallback if no external affiliate URL is configured yet in AdminCP
-            $targetLink = 'https://www.eirokrediti.lv';
+            $targetLink = url('/');
         }
 
-        $params = [
+        $params = array_filter([
             's1' => $prefixValue,
             's2' => $utm_campaign,
             's3' => $gclid,
             's4' => $utm_content,
             's5' => $utm_source,
             's6' => $position,
-        ];
+        ], fn ($v) => $v !== null && $v !== '');
 
         $separator = str_contains($targetLink, '?') ? '&' : '?';
-        $finalLink = $targetLink . $separator . http_build_query($params);
+        $finalLink = !empty($params) ? ($targetLink . $separator . http_build_query($params)) : $targetLink;
 
-        return view('go')->with([
-            'link' => $finalLink,
-            'lender' => $lender,
-        ]);
+        return response()
+            ->view('go', [
+                'link' => $finalLink,
+                'lender' => $lender,
+            ])
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     private function isBot(?string $userAgent): bool

@@ -7,9 +7,9 @@ use App\Http\Controllers\ContactUsController;
 use App\Http\Controllers\DeepSectionController;
 use App\Http\Controllers\GoController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Newsletter\EmailController as NewsletterEmailController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SectionController;
-use App\Http\Controllers\Newsletter\EmailController as NewsletterEmailController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\TertiarySectionController;
 use App\Http\Controllers\Unsubscribe\IndexController as UnsubscribeIndexController;
@@ -32,7 +32,6 @@ Route::group([
         Route::post('/subscribe', [NewsletterEmailController::class, 'index'])->name('subscribe.email');
 
         Route::resource('/unsubscribe', UnsubscribeIndexController::class)->only(['index', 'store']);
-        // Route::post('/unsubscribe', [UnsubscribeIndexController::class, 'postUnsubscribe']);
 
         $adminLocale = (Request::segment(1) && in_array(Request::segment(1), ['lv', 'ru'])) ? Request::segment(1) : 'lv';
 
@@ -57,14 +56,17 @@ Route::group([
             return redirect('/lv/login' . ($query ? '?' . $query : ''), 301);
         });
         Route::post('/login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'store']);
+
         // Review post route
         Route::post('/{companies_name}/{route_name}', [ReviewController::class, 'create'])->name('companies.review.create');
 
         Route::get('/go/{lender_id}/{lender_position}', [GoController::class, 'index'])->name('go');
         Route::get('/go/{lender_slug}', [GoController::class, 'bySlug'])->name('go.slug');
 
-        Route::get('/manifest.json', [SeoController::class, 'manifestJson']);
-        Route::get('/robots.txt', [SeoController::class, 'robotsTxt']);
+        Route::get('/manifest.json', [SeoController::class, 'manifestJson'])->name('manifest.json');
+        Route::get('/robots.txt', [SeoController::class, 'robotsTxt'])->name('robots.txt');
+        Route::get('/sitemap.xml', [SeoController::class, 'sitemapXml'])->name('sitemap.xml');
+        Route::get('/llms.txt', [SeoController::class, 'llmsTxt'])->name('llms.txt');
         Route::get('/captcha', [CaptchaController::class, 'generate'])->name('captcha');
 
         Route::get('/{name}', [SectionController::class, 'index'])->name('section');

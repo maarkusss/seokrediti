@@ -7,12 +7,12 @@ use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
-     * A basic test example.
-     *
-     * @return void
+     * Verify homepage renders resiliently even on a freshly migrated empty database.
      */
-    public function testBasicTest()
+    public function test_homepage_renders_on_empty_migrated_database(): void
     {
         $response = $this->get('/');
 

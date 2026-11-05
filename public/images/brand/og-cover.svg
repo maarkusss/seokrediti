@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#F6F3EC"/>
+  <rect x="48" y="48" width="1104" height="534" fill="#FBF9F4" stroke="#151412" stroke-width="3"/>
+  <line x1="96" y1="142" x2="1104" y2="142" stroke="#151412" stroke-width="4"/>
+  <line x1="96" y1="150" x2="1104" y2="150" stroke="#151412" stroke-width="1"/>
+  <text x="96" y="116" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-weight="700" letter-spacing="-1" fill="#151412">Credito<tspan font-style="italic" font-weight="600" fill="#9E1B1B">.lv</tspan></text>
+  <text x="1104" y="112" text-anchor="end" font-family="Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="3" fill="#9E1B1B">NEATKARĪGS KREDĪTU SALĪDZINĀJUMS</text>
+  <text x="96" y="285" font-family="Georgia, 'Times New Roman', serif" font-size="66" font-weight="700" fill="#151412">Neatkarīgs kredītu un</text>
+  <text x="96" y="365" font-family="Georgia, 'Times New Roman', serif" font-size="66" font-weight="700" fill="#151412">procentu likmju salīdzinājums</text>
+  <line x1="96" y1="420" x2="320" y2="420" stroke="#9E1B1B" stroke-width="3"/>
+  <text x="96" y="472" font-family="Georgia, 'Times New Roman', serif" font-size="28" font-style="italic" fill="#3A3833">Gada procentu likmes (GPL), nosacījumi un klientu atsauksmes vienā tabulā.</text>
+  <line x1="96" y1="518" x2="1104" y2="518" stroke="#D6D0C3" stroke-width="1.5"/>
+  <text x="96" y="552" font-family="Arial, sans-serif" font-size="18" fill="#6B675F">Credito.lv · Tikai PTAC licencēti aizdevēji · info@credito.lv</text>
+</svg>

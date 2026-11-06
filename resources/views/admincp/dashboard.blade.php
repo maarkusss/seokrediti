@@ -368,46 +368,91 @@
 @section('javascript')
     <script>
         const activeSection = document.getElementById("sidebar-overview");
-        activeSection.classList.add("text-stone-900", "bg-primary-normal/40", "font-semibold");
+        if (activeSection) {
+            activeSection.classList.add("text-stone-900", "bg-primary-normal/40", "font-semibold");
+        }
 
-        let chartHeight = document.querySelector("#overview_statistics").clientHeight;
+        const statsEl = document.querySelector("#overview_statistics");
+        let chartHeight = statsEl && statsEl.clientHeight > 100 ? statsEl.clientHeight : 300;
 
         window.options = {
             chart: {
                 type: "area",
+                fontFamily: "inherit",
                 toolbar: {
-                    tools: {
-                        zoom: false,
-                        zoomin: false,
-                        zoomout: false,
-                        reset: false,
-                        pan: false
-                    }
+                    show: false
                 },
                 height: chartHeight,
                 maintainAspectRatio: false,
                 responsive: true,
+            },
+            colors: ['#10b981', '#2563eb', '#8b5cf6'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.35,
+                    opacityTo: 0.05,
+                    stops: [0, 95, 100]
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 2.5
             },
             dataLabels: {
                 enabled: false
             },
             series: [{
                     name: "Commissions",
-                    data: [{!! implode(', ', $chart_data['commissions']) !!}]
+                    data: [{!! implode(', ', $chart_data['commissions'] ?? []) !!}]
                 },
                 {
                     name: "Clicks",
-                    data: [{!! implode(', ', $chart_data['clicks']) !!}]
+                    data: [{!! implode(', ', $chart_data['clicks'] ?? []) !!}]
                 },
                 {
                     name: "Visitors",
-                    data: [{!! implode(', ', $chart_data['visitors']) !!}]
+                    data: [{!! implode(', ', $chart_data['visitors'] ?? []) !!}]
                 },
-
             ],
             xaxis: {
-                categories: ["{!! implode('", "', array_keys($chart_data['clicks'])) !!}"]
+                categories: ["{!! implode('", "', array_keys($chart_data['clicks'] ?? [])) !!}"],
+                labels: {
+                    style: {
+                        colors: '#64748b',
+                        fontSize: '11px'
+                    }
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        colors: '#64748b',
+                        fontSize: '11px'
+                    }
+                }
+            },
+            grid: {
+                borderColor: '#f1f5f9',
+                strokeDashArray: 4
+            }
+        };
+
+        function renderDashboardChart() {
+            const chartEl = document.getElementById("chart");
+            if (chartEl && typeof window.ApexCharts !== 'undefined' && typeof window.options !== 'undefined' && !chartEl.hasChildNodes()) {
+                const chart = new window.ApexCharts(chartEl, window.options);
+                chart.render();
             }
         }
+
+        renderDashboardChart();
+        document.addEventListener("DOMContentLoaded", renderDashboardChart);
+        setTimeout(renderDashboardChart, 50);
+        setTimeout(renderDashboardChart, 150);
+        setTimeout(renderDashboardChart, 300);
+        setTimeout(renderDashboardChart, 600);
+        setTimeout(renderDashboardChart, 1000);
     </script>
 @endsection

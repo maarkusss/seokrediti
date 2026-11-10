@@ -12,6 +12,7 @@
     <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     @vite(['resources/css/admin.css', 'resources/js/admin.js'])
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     @yield('head')
 </head>
 

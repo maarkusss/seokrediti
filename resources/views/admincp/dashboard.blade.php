@@ -49,8 +49,8 @@
                             'detail_color' => $data['visitors']['color'],
                         ])
                     </div>
-                    <div class="flex flex-col w-full min-h-[300px] p-5 bg-white rounded border border-slate-200/80 shadow-xs lg:col-span-2">
-                        <div id="chart" class="w-full min-h-[280px]">
+                    <div class="flex flex-col w-full min-h-[340px] p-5 bg-white rounded border border-slate-200/80 shadow-xs lg:col-span-2">
+                        <div id="chart" style="min-height: 300px; width: 100%;">
                         </div>
                     </div>
                 </div>
@@ -445,24 +445,10 @@
                 return;
             }
 
-            // Prioritize window.ApexCharts if loaded
-            if (typeof window.ApexCharts !== 'undefined') {
-                if (!chartEl.hasChildNodes()) {
-                    const chart = new window.ApexCharts(chartEl, window.options);
-                    chart.render();
-                }
-            } else if (!document.getElementById("apexcharts-cdn-script")) {
-                // Fallback to load ApexCharts directly if Vite bundle hasn't finished or failed
-                const script = document.createElement("script");
-                script.id = "apexcharts-cdn-script";
-                script.src = "https://cdn.jsdelivr.net/npm/apexcharts";
-                script.onload = () => {
-                    if (chartEl && !chartEl.hasChildNodes()) {
-                        const chart = new window.ApexCharts(chartEl, window.options);
-                        chart.render();
-                    }
-                };
-                document.head.appendChild(script);
+            const Apex = window.ApexCharts || (typeof ApexCharts !== 'undefined' ? ApexCharts : null);
+            if (Apex && !chartEl.hasChildNodes()) {
+                const chart = new Apex(chartEl, window.options);
+                chart.render();
             }
         }
 

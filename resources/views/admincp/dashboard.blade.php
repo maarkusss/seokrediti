@@ -49,8 +49,8 @@
                             'detail_color' => $data['visitors']['color'],
                         ])
                     </div>
-                    <div class="flex flex-col w-full p-5 bg-white rounded border border-slate-200/80 shadow-xs lg:col-span-2">
-                        <div id="chart" class="h-full">
+                    <div class="flex flex-col w-full min-h-[300px] p-5 bg-white rounded border border-slate-200/80 shadow-xs lg:col-span-2">
+                        <div id="chart" class="w-full min-h-[280px]">
                         </div>
                     </div>
                 </div>
@@ -441,9 +441,28 @@
 
         function renderDashboardChart() {
             const chartEl = document.getElementById("chart");
-            if (chartEl && typeof window.ApexCharts !== 'undefined' && typeof window.options !== 'undefined' && !chartEl.hasChildNodes()) {
-                const chart = new window.ApexCharts(chartEl, window.options);
-                chart.render();
+            if (!chartEl || !window.options) {
+                return;
+            }
+
+            // Prioritize window.ApexCharts if loaded
+            if (typeof window.ApexCharts !== 'undefined') {
+                if (!chartEl.hasChildNodes()) {
+                    const chart = new window.ApexCharts(chartEl, window.options);
+                    chart.render();
+                }
+            } else if (!document.getElementById("apexcharts-cdn-script")) {
+                // Fallback to load ApexCharts directly if Vite bundle hasn't finished or failed
+                const script = document.createElement("script");
+                script.id = "apexcharts-cdn-script";
+                script.src = "https://cdn.jsdelivr.net/npm/apexcharts";
+                script.onload = () => {
+                    if (chartEl && !chartEl.hasChildNodes()) {
+                        const chart = new window.ApexCharts(chartEl, window.options);
+                        chart.render();
+                    }
+                };
+                document.head.appendChild(script);
             }
         }
 

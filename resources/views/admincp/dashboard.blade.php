@@ -49,8 +49,8 @@
                             'detail_color' => $data['visitors']['color'],
                         ])
                     </div>
-                    <div class="flex flex-col w-full min-h-[340px] p-5 bg-white rounded border border-slate-200/80 shadow-xs lg:col-span-2">
-                        <div id="chart" style="min-height: 300px; width: 100%;">
+                    <div class="flex flex-col w-full p-5 bg-white rounded border border-slate-200/80 shadow-xs lg:col-span-2">
+                        <div id="chart" class="w-full" style="min-height: 350px;">
                         </div>
                     </div>
                 </div>
@@ -372,8 +372,10 @@
             activeSection.classList.add("text-stone-900", "bg-primary-normal/40", "font-semibold");
         }
 
-        const statsEl = document.querySelector("#overview_statistics");
-        let chartHeight = statsEl && statsEl.clientHeight > 100 ? statsEl.clientHeight : 300;
+        const chartCategories = {!! json_encode(array_values(array_keys($chart_data['clicks'] ?? []))) !!};
+        const commissionsData = {!! json_encode(array_values($chart_data['commissions'] ?? [])) !!};
+        const clicksData = {!! json_encode(array_values($chart_data['clicks'] ?? [])) !!};
+        const visitorsData = {!! json_encode(array_values($chart_data['visitors'] ?? [])) !!};
 
         window.options = {
             chart: {
@@ -382,7 +384,7 @@
                 toolbar: {
                     show: false
                 },
-                height: chartHeight,
+                height: 350,
                 maintainAspectRatio: false,
                 responsive: true,
             },
@@ -405,19 +407,19 @@
             },
             series: [{
                     name: "Commissions",
-                    data: [{!! implode(', ', $chart_data['commissions'] ?? []) !!}]
+                    data: commissionsData
                 },
                 {
                     name: "Clicks",
-                    data: [{!! implode(', ', $chart_data['clicks'] ?? []) !!}]
+                    data: clicksData
                 },
                 {
                     name: "Visitors",
-                    data: [{!! implode(', ', $chart_data['visitors'] ?? []) !!}]
+                    data: visitorsData
                 },
             ],
             xaxis: {
-                categories: ["{!! implode('", "', array_keys($chart_data['clicks'] ?? [])) !!}"],
+                categories: chartCategories,
                 labels: {
                     style: {
                         colors: '#64748b',
@@ -446,7 +448,12 @@
             }
 
             const Apex = window.ApexCharts || (typeof ApexCharts !== 'undefined' ? ApexCharts : null);
-            if (Apex && !chartEl.hasChildNodes()) {
+            if (Apex) {
+                if (chartEl.dataset.apexRendered) {
+                    return;
+                }
+                chartEl.dataset.apexRendered = "true";
+                chartEl.innerHTML = "";
                 const chart = new Apex(chartEl, window.options);
                 chart.render();
             }
@@ -454,10 +461,9 @@
 
         renderDashboardChart();
         document.addEventListener("DOMContentLoaded", renderDashboardChart);
-        setTimeout(renderDashboardChart, 50);
-        setTimeout(renderDashboardChart, 150);
+        window.addEventListener("load", renderDashboardChart);
+        setTimeout(renderDashboardChart, 100);
         setTimeout(renderDashboardChart, 300);
-        setTimeout(renderDashboardChart, 600);
-        setTimeout(renderDashboardChart, 1000);
+        setTimeout(renderDashboardChart, 700);
     </script>
 @endsection
